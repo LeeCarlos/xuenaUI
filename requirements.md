@@ -18,7 +18,7 @@
 | 图表库 | ECharts | 5+ |
 | 后端框架 | Spring Boot | 3.2+ |
 | 数据库 | MySQL | 8.0+ |
-| Excel处理 | Apache POI | 5.2+ |
+| Excel处理 | EasyExcel | 3.3+ |
 | 认证 | JWT | - |
 | 构建工具 | Maven | 3.9+ |
 | 前端构建 | Vite | 6+ |
@@ -1280,7 +1280,7 @@ backend/
 │       │   │   ├── BusinessException.java
 │       │   │   └── ErrorCode.java
 │       │   ├── util/                 # 工具类
-│       │   │   ├── ExcelParserUtil.java
+│       │   │   ├── EasyExcelUtil.java
 │       │   │   ├── PasswordUtil.java
 │       │   │   └── DateUtil.java
 │       │   ├── constant/             # 常量类
@@ -1342,9 +1342,431 @@ backend/
 
 ---
 
-## 8. 部署要求
+## 8. EasyExcel 配置与使用
 
-### 8.1 环境要求
+### 8.1 依赖配置（pom.xml）
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>easyexcel</artifactId>
+    <version>3.3.2</version>
+</dependency>
+```
+
+### 8.2 核心配置类
+
+**EasyExcelConfig.java**：
+
+```java
+@Configuration
+public class EasyExcelConfig {
+    
+    @Bean
+    public ExcelBuilderFactory excelBuilderFactory() {
+        return new ExcelBuilderFactory();
+    }
+}
+```
+
+### 8.3 Excel 解析工具类
+
+**EasyExcelUtil.java**：
+
+```java
+@Component
+public class EasyExcelUtil {
+    
+    public <T> List<T> parseExcel(MultipartFile file, Class<T> clazz, ReadListener<T> listener) throws IOException {
+        List<T> dataList = new ArrayList<>();
+        
+        ReadListener<T> wrapperListener = new ReadListener<T>() {
+            @Override
+            public void invoke(T data, AnalysisContext context) {
+                dataList.add(data);
+                listener.invoke(data, context);
+            }
+            
+            @Override
+            public void doAfterAllAnalysed(AnalysisContext context) {
+                listener.doAfterAllAnalysed(context);
+            }
+        };
+        
+        EasyExcel.read(file.getInputStream(), clazz, wrapperListener)
+                .sheet()
+                .doRead();
+        
+        return dataList;
+    }
+    
+    public <T> void writeExcel(HttpServletResponse response, List<T> data, Class<T> clazz, String sheetName) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String fileName = URLEncoder.encode(sheetName + ".xlsx", "UTF-8").replaceAll("\\+", "%20");
+        response.setHeader("Content-disposition", "attachment;filename=" + fileName);
+        
+        EasyExcel.write(response.getOutputStream(), clazz)
+                .sheet(sheetName)
+                .doWrite(data);
+    }
+}
+```
+
+### 8.4 Excel 实体类示例
+
+**QualityScoreData.java**（质量部打分模板）：
+
+```java
+@Data
+public class QualityScoreData {
+    
+    @ExcelProperty(value = "序号", index = 0)
+    private Integer rowNum;
+    
+    @ExcelProperty(value = "供应商名称", index = 1)
+    private String supplierName;
+    
+    @ExcelProperty(value = "供应商类别", index = 2)
+    private String category;
+    
+    @ExcelProperty(value = "a1验货合格率", index = 3)
+    private BigDecimal a1;
+    
+    @ExcelProperty(value = "a2综合客诉率", index = 4)
+    private BigDecimal a2;
+    
+    @ExcelProperty(value = "a3新品开发质量", index = 5)
+    private BigDecimal a3;
+    
+    @ExcelProperty(value = "a4质量改善完成率", index = 6)
+    private BigDecimal a4;
+    
+    @ExcelProperty(value = "A总分", index = 7)
+    private BigDecimal dimensionA;
+    
+    @ExcelProperty(value = "等级", index = 8)
+    private String grade;
+    
+    @ExcelProperty(value = "异常原因", index = 9)
+    private String exceptionReason;
+}
+```
+
+**PlanningScoreData.java**（计划部打分模板）：
+
+```java
+@Data
+public class PlanningScoreData {
+    
+    @ExcelProperty(value = "序号", index = 0)
+    private Integer rowNum;
+    
+    @ExcelProperty(value = "供应商名称", index = 1)
+    private String supplierName;
+    
+    @ExcelProperty(value = "供应商类别", index = 2)
+    private String category;
+    
+    @ExcelProperty(value = "c1交货延迟批次", index = 3)
+    private BigDecimal c1;
+    
+    @ExcelProperty(value = "c2交货数量短缺", index = 4)
+    private BigDecimal c2;
+    
+    @ExcelProperty(value = "c3订单交付配合度", index = 5)
+    private BigDecimal c3;
+    
+    @ExcelProperty(value = "C总分", index = 6)
+    private BigDecimal dimensionC;
+    
+    @ExcelProperty(value = "等级", index = 7)
+    private String grade;
+    
+    @ExcelProperty(value = "异常原因", index = 8)
+    private String exceptionReason;
+}
+```
+
+**PackagingScoreData.java**（包开部打分模板）：
+
+```java
+@Data
+public class PackagingScoreData {
+    
+    @ExcelProperty(value = "序号", index = 0)
+    private Integer rowNum;
+    
+    @ExcelProperty(value = "供应商名称", index = 1)
+    private String supplierName;
+    
+    @ExcelProperty(value = "供应商类别", index = 2)
+    private String category;
+    
+    @ExcelProperty(value = "d1a包材技术支持", index = 3)
+    private BigDecimal d1a;
+    
+    @ExcelProperty(value = "d1b包材技术评估", index = 4)
+    private BigDecimal d1b;
+    
+    @ExcelProperty(value = "D1总分", index = 5)
+    private BigDecimal dimensionD1;
+    
+    @ExcelProperty(value = "等级", index = 6)
+    private String grade;
+    
+    @ExcelProperty(value = "异常原因", index = 7)
+    private String exceptionReason;
+}
+```
+
+**ProcurementScoreData.java**（采购部打分模板）：
+
+```java
+@Data
+public class ProcurementScoreData {
+    
+    @ExcelProperty(value = "序号", index = 0)
+    private Integer rowNum;
+    
+    @ExcelProperty(value = "供应商名称", index = 1)
+    private String supplierName;
+    
+    @ExcelProperty(value = "供应商类别", index = 2)
+    private String category;
+    
+    @ExcelProperty(value = "b1价格水平", index = 3)
+    private BigDecimal b1;
+    
+    @ExcelProperty(value = "b2供货周期", index = 4)
+    private BigDecimal b2;
+    
+    @ExcelProperty(value = "b3付款条件", index = 5)
+    private BigDecimal b3;
+    
+    @ExcelProperty(value = "b4报价准确", index = 6)
+    private BigDecimal b4;
+    
+    @ExcelProperty(value = "b5成本支持", index = 7)
+    private BigDecimal b5;
+    
+    @ExcelProperty(value = "B总分", index = 8)
+    private BigDecimal dimensionB;
+    
+    @ExcelProperty(value = "d2a配方技术支持", index = 9)
+    private BigDecimal d2a;
+    
+    @ExcelProperty(value = "d2b配方技术评估", index = 10)
+    private BigDecimal d2b;
+    
+    @ExcelProperty(value = "d2c研发打样", index = 11)
+    private BigDecimal d2c;
+    
+    @ExcelProperty(value = "d2d业务支持度", index = 12)
+    private BigDecimal d2d;
+    
+    @ExcelProperty(value = "d2e响应配合度", index = 13)
+    private BigDecimal d2e;
+    
+    @ExcelProperty(value = "D2总分", index = 14)
+    private BigDecimal dimensionD2;
+    
+    @ExcelProperty(value = "总分", index = 15)
+    private BigDecimal total;
+    
+    @ExcelProperty(value = "等级", index = 16)
+    private String grade;
+    
+    @ExcelProperty(value = "会议结论", index = 17)
+    private String conclusion;
+    
+    @ExcelProperty(value = "品质考核异常原因", index = 18)
+    private String exceptionQuality;
+    
+    @ExcelProperty(value = "成本考核异常原因", index = 19)
+    private String exceptionCost;
+    
+    @ExcelProperty(value = "交货考核异常原因", index = 20)
+    private String exceptionDelivery;
+    
+    @ExcelProperty(value = "服务考核-成品异常原因", index = 21)
+    private String exceptionServiceProduct;
+    
+    @ExcelProperty(value = "服务考核-包材异常原因", index = 22)
+    private String exceptionServicePackage;
+    
+    @ExcelProperty(value = "其他异常原因", index = 23)
+    private String exceptionOther;
+}
+```
+
+### 8.5 Excel 解析服务实现
+
+**UploadServiceImpl.java** 核心方法：
+
+```java
+@Override
+public List<DepartmentScoreDO> parseAndSave(MultipartFile file, String yearMonth, String department) {
+    List<DepartmentScoreDO> resultList = new ArrayList<>();
+    
+    try {
+        switch (department) {
+            case "质量":
+                resultList = parseQualityExcel(file, yearMonth);
+                break;
+            case "计划":
+                resultList = parsePlanningExcel(file, yearMonth);
+                break;
+            case "包开":
+                resultList = parsePackagingExcel(file, yearMonth);
+                break;
+            case "采购":
+                resultList = parseProcurementExcel(file, yearMonth);
+                break;
+            default:
+                throw new BusinessException("未知部门：" + department);
+        }
+        
+        departmentScoreMapper.insertBatch(resultList);
+        log.info("成功导入{}条{}部打分数据，年月：{}", resultList.size(), department, yearMonth);
+        
+    } catch (IOException e) {
+        log.error("Excel解析失败", e);
+        throw new BusinessException("Excel解析失败：" + e.getMessage());
+    }
+    
+    return resultList;
+}
+
+private List<DepartmentScoreDO> parseQualityExcel(MultipartFile file, String yearMonth) throws IOException {
+    List<QualityScoreData> dataList = easyExcelUtil.parseExcel(file, QualityScoreData.class, new ReadListener<QualityScoreData>() {
+        @Override
+        public void invoke(QualityScoreData data, AnalysisContext context) {}
+        
+        @Override
+        public void doAfterAllAnalysed(AnalysisContext context) {}
+    });
+    
+    return dataList.stream().map(data -> {
+        DepartmentScoreDO entity = new DepartmentScoreDO();
+        entity.setYearMonth(yearMonth);
+        entity.setSupplierName(data.getSupplierName());
+        entity.setDepartment("质量");
+        entity.setDimensionGroup("A");
+        entity.setDimensionScore(data.getDimensionA());
+        entity.setSubScores(JSON.toJSONString(Map.of("a1", data.getA1(), "a2", data.getA2(), "a3", data.getA3(), "a4", data.getA4())));
+        entity.setExceptionReason(data.getExceptionReason());
+        entity.setStatus("SUBMITTED");
+        entity.setFileName(file.getOriginalFilename());
+        return entity;
+    }).collect(Collectors.toList());
+}
+
+private List<DepartmentScoreDO> parsePlanningExcel(MultipartFile file, String yearMonth) throws IOException {
+    List<PlanningScoreData> dataList = easyExcelUtil.parseExcel(file, PlanningScoreData.class, new ReadListener<PlanningScoreData>() {
+        @Override
+        public void invoke(PlanningScoreData data, AnalysisContext context) {}
+        
+        @Override
+        public void doAfterAllAnalysed(AnalysisContext context) {}
+    });
+    
+    return dataList.stream().map(data -> {
+        DepartmentScoreDO entity = new DepartmentScoreDO();
+        entity.setYearMonth(yearMonth);
+        entity.setSupplierName(data.getSupplierName());
+        entity.setDepartment("计划");
+        entity.setDimensionGroup("C");
+        entity.setDimensionScore(data.getDimensionC());
+        entity.setSubScores(JSON.toJSONString(Map.of("c1", data.getC1(), "c2", data.getC2(), "c3", data.getC3())));
+        entity.setExceptionReason(data.getExceptionReason());
+        entity.setStatus("SUBMITTED");
+        entity.setFileName(file.getOriginalFilename());
+        return entity;
+    }).collect(Collectors.toList());
+}
+
+private List<DepartmentScoreDO> parsePackagingExcel(MultipartFile file, String yearMonth) throws IOException {
+    List<PackagingScoreData> dataList = easyExcelUtil.parseExcel(file, PackagingScoreData.class, new ReadListener<PackagingScoreData>() {
+        @Override
+        public void invoke(PackagingScoreData data, AnalysisContext context) {}
+        
+        @Override
+        public void doAfterAllAnalysed(AnalysisContext context) {}
+    });
+    
+    return dataList.stream().map(data -> {
+        DepartmentScoreDO entity = new DepartmentScoreDO();
+        entity.setYearMonth(yearMonth);
+        entity.setSupplierName(data.getSupplierName());
+        entity.setDepartment("包开");
+        entity.setDimensionGroup("D1");
+        entity.setDimensionScore(data.getDimensionD1());
+        entity.setSubScores(JSON.toJSONString(Map.of("d1a", data.getD1a(), "d1b", data.getD1b())));
+        entity.setExceptionReason(data.getExceptionReason());
+        entity.setStatus("SUBMITTED");
+        entity.setFileName(file.getOriginalFilename());
+        return entity;
+    }).collect(Collectors.toList());
+}
+
+private List<DepartmentScoreDO> parseProcurementExcel(MultipartFile file, String yearMonth) throws IOException {
+    List<ProcurementScoreData> dataList = easyExcelUtil.parseExcel(file, ProcurementScoreData.class, new ReadListener<ProcurementScoreData>() {
+        @Override
+        public void invoke(ProcurementScoreData data, AnalysisContext context) {}
+        
+        @Override
+        public void doAfterAllAnalysed(AnalysisContext context) {}
+    });
+    
+    List<DepartmentScoreDO> resultList = new ArrayList<>();
+    
+    for (ProcurementScoreData data : dataList) {
+        DepartmentScoreDO bScore = new DepartmentScoreDO();
+        bScore.setYearMonth(yearMonth);
+        bScore.setSupplierName(data.getSupplierName());
+        bScore.setDepartment("采购");
+        bScore.setDimensionGroup("B");
+        bScore.setDimensionScore(data.getDimensionB());
+        bScore.setSubScores(JSON.toJSONString(Map.of("b1", data.getB1(), "b2", data.getB2(), "b3", data.getB3(), "b4", data.getB4(), "b5", data.getB5())));
+        bScore.setExceptionReason(data.getExceptionCost());
+        bScore.setStatus("SUBMITTED");
+        bScore.setFileName(file.getOriginalFilename());
+        resultList.add(bScore);
+        
+        DepartmentScoreDO d2Score = new DepartmentScoreDO();
+        d2Score.setYearMonth(yearMonth);
+        d2Score.setSupplierName(data.getSupplierName());
+        d2Score.setDepartment("采购");
+        d2Score.setDimensionGroup("D2");
+        d2Score.setDimensionScore(data.getDimensionD2());
+        d2Score.setSubScores(JSON.toJSONString(Map.of("d2a", data.getD2a(), "d2b", data.getD2b(), "d2c", data.getD2c(), "d2d", data.getD2d(), "d2e", data.getD2e())));
+        d2Score.setExceptionReason(data.getExceptionServiceProduct());
+        d2Score.setStatus("SUBMITTED");
+        d2Score.setFileName(file.getOriginalFilename());
+        resultList.add(d2Score);
+    }
+    
+    return resultList;
+}
+```
+
+### 8.6 EasyExcel 优势
+
+| 特性 | Apache POI | EasyExcel |
+|------|-----------|-----------|
+| 内存占用 | 高（整个文件加载到内存） | 低（流式读取，逐行解析） |
+| 大文件处理 | 容易OOM | 支持100万+行 |
+| API复杂度 | 较复杂 | 简洁易用 |
+| 注解支持 | 无 | 支持@ExcelProperty注解 |
+| 读写性能 | 一般 | 高性能 |
+| 社区支持 | 成熟 | 活跃 |
+
+---
+
+## 9. 部署要求
+
+### 9.1 环境要求
 
 | 环境 | 要求 |
 |------|------|
@@ -1353,7 +1775,7 @@ backend/
 | Node.js | 20+ |
 | Maven | 3.9+ |
 
-### 8.2 配置说明
+### 9.2 配置说明
 
 **数据库连接配置**（application.yml）：
 ```yaml
@@ -1374,9 +1796,9 @@ jwt:
 
 ---
 
-## 9. 开发计划
+## 10. 开发计划
 
-### 9.1 第一阶段：基础框架搭建（1-2周）
+### 10.1 第一阶段：基础框架搭建（1-2周）
 
 | 任务 | 描述 |
 |------|------|
@@ -1385,16 +1807,16 @@ jwt:
 | 数据库设计 | 创建数据库表结构 |
 | 认证模块 | JWT 认证、用户管理 |
 
-### 9.2 第二阶段：核心功能开发（2-3周）
+### 10.2 第二阶段：核心功能开发（2-3周）
 
 | 任务 | 描述 |
 |------|------|
-| 数据上传 | Excel 文件上传与解析 |
+| 数据上传 | EasyExcel 文件上传与解析 |
 | 供应商池 | CRUD 功能实现 |
-| 手动打分 | 在线打分、自动计算、提交审核 |
+| 手动打分 | 在线打分、多部门协同、提交审核 |
 | 明细数据 | 月度明细表展示 |
 
-### 9.3 第三阶段：分析功能开发（2-3周）
+### 10.3 第三阶段：分析功能开发（2-3周）
 
 | 任务 | 描述 |
 |------|------|
@@ -1402,7 +1824,7 @@ jwt:
 | 维度对比 | 雷达图、热力图 |
 | 排名变动 | 排名对比、差异分析、会议记录 |
 
-### 9.4 第四阶段：测试与优化（1周）
+### 10.4 第四阶段：测试与优化（1周）
 
 | 任务 | 描述 |
 |------|------|
