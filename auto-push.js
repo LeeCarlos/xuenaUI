@@ -6,6 +6,7 @@ const REPO_PATH = __dirname;
 const LOG_FILE = path.join(__dirname, 'auto-push.log');
 const INTERVAL_MINUTES = 30;
 const INTERVAL_MS = INTERVAL_MINUTES * 60 * 1000;
+const GIT_PATH = '"E:\\工作文件\\白皙工作文件\\2025年\\Git\\cmd\\git.exe"';
 
 function log(message) {
     const timestamp = new Date().toISOString();
@@ -24,23 +25,23 @@ function executeCommand(cmd, options = {}) {
 }
 
 function hasChanges() {
-    const status = executeCommand('git status --porcelain');
+    const status = executeCommand(`${GIT_PATH} status --porcelain`);
     return status.success && status.output.length > 0;
 }
 
 function hasUnpushedCommits() {
-    const remoteCheck = executeCommand('git ls-remote --get-url origin');
+    const remoteCheck = executeCommand(`${GIT_PATH} ls-remote --get-url origin`);
     if (!remoteCheck.success) {
         return false;
     }
     
-    const fetchResult = executeCommand('git fetch origin');
+    const fetchResult = executeCommand(`${GIT_PATH} fetch origin`);
     if (!fetchResult.success) {
         log(`无法获取远程分支: ${fetchResult.error}`);
         return false;
     }
     
-    const aheadResult = executeCommand('git rev-list --count HEAD..origin/main');
+    const aheadResult = executeCommand(`${GIT_PATH} rev-list --count HEAD..origin/main`);
     if (!aheadResult.success) {
         return false;
     }
@@ -49,7 +50,7 @@ function hasUnpushedCommits() {
 }
 
 function getBranchName() {
-    const result = executeCommand('git rev-parse --abbrev-ref HEAD');
+    const result = executeCommand(`${GIT_PATH} rev-parse --abbrev-ref HEAD`);
     return result.success ? result.output : 'main';
 }
 
@@ -62,7 +63,7 @@ function autoPush() {
     if (hasChanges()) {
         log('检测到工作区有变更，开始提交...');
         
-        const addResult = executeCommand('git add .');
+        const addResult = executeCommand(`${GIT_PATH} add .`);
         if (!addResult.success) {
             log(`git add 失败: ${addResult.error}`);
             return;
@@ -70,7 +71,7 @@ function autoPush() {
         
         const dateStr = new Date().toLocaleString('zh-CN', { hour12: false });
         const commitMsg = `chore: 自动推送 - ${dateStr}`;
-        const commitResult = executeCommand(`git commit -m "${commitMsg}"`);
+        const commitResult = executeCommand(`${GIT_PATH} commit -m "${commitMsg}"`);
         
         if (!commitResult.success) {
             log(`git commit 失败: ${commitResult.error}`);
@@ -85,7 +86,7 @@ function autoPush() {
     if (hasUnpushedCommits()) {
         log('检测到有未推送的提交，开始推送...');
         
-        const pushResult = executeCommand(`git push origin ${branch}`);
+        const pushResult = executeCommand(`${GIT_PATH} push origin ${branch}`);
         if (pushResult.success) {
             log('推送成功！');
         } else {
