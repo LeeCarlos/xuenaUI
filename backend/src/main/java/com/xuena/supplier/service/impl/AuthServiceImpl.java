@@ -52,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
-        if (user.getIsEnabled() == 0) {
+        if (user.getIsEnabled() == null || user.getIsEnabled() == 0) {
             throw new BusinessException("用户已被禁用");
         }
 

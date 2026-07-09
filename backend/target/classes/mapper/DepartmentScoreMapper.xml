@@ -7,14 +7,14 @@
     
     <select id="selectList" resultType="com.xuena.supplier.entity.DepartmentScoreDO">
         SELECT * FROM sp_department_score WHERE is_deleted = 0
-        <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
+        <if test="yearMonth != null and yearMonth != ''">AND `year_month` = #{yearMonth}</if>
         <if test="supplierName != null and supplierName != ''">AND supplier_name LIKE CONCAT('%', #{supplierName}, '%')</if>
         <if test="department != null and department != ''">AND department = #{department}</if>
-        ORDER BY year_month DESC, gmt_create DESC
+        ORDER BY `year_month` DESC, gmt_create DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.DepartmentScoreDO">
-        INSERT INTO sp_department_score (year_month, supplier_name, department, dimension_group,
+    <insert id="insert" parameterType="com.xuena.supplier.entity.DepartmentScoreDO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sp_department_score (`year_month`, supplier_name, department, dimension_group,
             dimension_score, sub_scores, exception_reason, status, file_name)
         VALUES (#{yearMonth}, #{supplierName}, #{department}, #{dimensionGroup},
             #{dimensionScore}, #{subScores}, #{exceptionReason}, #{status}, #{fileName})
@@ -23,7 +23,7 @@
     <update id="update" parameterType="com.xuena.supplier.entity.DepartmentScoreDO">
         UPDATE sp_department_score
         <set>
-            <if test="yearMonth != null">year_month = #{yearMonth},</if>
+            <if test="yearMonth != null">`year_month` = #{yearMonth},</if>
             <if test="supplierName != null">supplier_name = #{supplierName},</if>
             <if test="department != null">department = #{department},</if>
             <if test="dimensionGroup != null">dimension_group = #{dimensionGroup},</if>

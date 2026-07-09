@@ -17,7 +17,7 @@
         ORDER BY gmt_create DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.SupplierPoolDO">
+    <insert id="insert" parameterType="com.xuena.supplier.entity.SupplierPoolDO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sp_supplier_pool (name, category, is_disabled)
         VALUES (#{name}, #{category}, #{isDisabled})
     </insert>

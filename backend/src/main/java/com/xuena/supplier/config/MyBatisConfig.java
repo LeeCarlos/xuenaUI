@@ -20,6 +20,11 @@ public class MyBatisConfig {
         factory.setDataSource(dataSource);
         factory.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mapper/*.xml"));
         factory.setTypeAliasesPackage("com.xuena.supplier.entity");
+        
+        org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
+        configuration.setMapUnderscoreToCamelCase(true);
+        factory.setConfiguration(configuration);
+        
         return factory.getObject();
     }
 

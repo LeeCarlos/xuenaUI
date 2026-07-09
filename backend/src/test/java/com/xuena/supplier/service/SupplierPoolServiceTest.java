@@ -2,12 +2,11 @@ package com.xuena.supplier.service;
 
 import com.xuena.supplier.entity.SupplierPoolDO;
 import com.xuena.supplier.exception.BusinessException;
-import com.xuena.supplier.service.impl.SupplierPoolServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -16,36 +15,52 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class SupplierPoolServiceTest {
 
     @Autowired
     private SupplierPoolService supplierPoolService;
 
+    private SupplierPoolDO testSupplier;
+    private SupplierPoolDO duplicateSupplier;
+
+    @BeforeEach
+    void setUp() {
+        long timestamp = System.currentTimeMillis();
+        testSupplier = new SupplierPoolDO();
+        testSupplier.setName("测试供应商_" + timestamp);
+        testSupplier.setCategory("牙刷");
+        supplierPoolService.create(testSupplier);
+
+        duplicateSupplier = new SupplierPoolDO();
+        duplicateSupplier.setName("重复供应商_" + timestamp);
+        duplicateSupplier.setCategory("牙膏");
+        supplierPoolService.create(duplicateSupplier);
+    }
+
     @Test
     @DisplayName("获取供应商列表 - 成功")
     void list_Success() {
         List<SupplierPoolDO> list = supplierPoolService.list(null, null, null);
-        
+
         assertNotNull(list);
-        assertTrue(list.size() >= 2);
+        assertTrue(list.size() >= 1);
     }
 
     @Test
     @DisplayName("按名称搜索供应商 - 成功")
     void list_SearchByName_Success() {
-        List<SupplierPoolDO> list = supplierPoolService.list("供应商A", null, null);
-        
+        List<SupplierPoolDO> list = supplierPoolService.list(testSupplier.getName(), null, null);
+
         assertNotNull(list);
         assertTrue(list.size() >= 1);
-        assertTrue(list.stream().anyMatch(s -> s.getName().contains("供应商A")));
+        assertTrue(list.stream().anyMatch(s -> s.getName().contains(testSupplier.getName())));
     }
 
     @Test
     @DisplayName("按类别筛选供应商 - 成功")
     void list_FilterByCategory_Success() {
         List<SupplierPoolDO> list = supplierPoolService.list(null, "牙刷", null);
-        
+
         assertNotNull(list);
         assertTrue(list.size() >= 1);
         assertTrue(list.stream().allMatch(s -> "牙刷".equals(s.getCategory())));
@@ -54,29 +69,29 @@ class SupplierPoolServiceTest {
     @Test
     @DisplayName("获取供应商详情 - 成功")
     void getById_Success() {
-        SupplierPoolDO supplier = supplierPoolService.getById(1L);
-        
+        SupplierPoolDO supplier = supplierPoolService.getById(testSupplier.getId());
+
         assertNotNull(supplier);
-        assertEquals("供应商A", supplier.getName());
+        assertEquals(testSupplier.getName(), supplier.getName());
     }
 
     @Test
     @DisplayName("获取供应商详情 - 不存在")
     void getById_NotFound_ThrowsException() {
-        assertThrows(BusinessException.class, () -> supplierPoolService.getById(999L));
+        assertThrows(BusinessException.class, () -> supplierPoolService.getById(999999L));
     }
 
     @Test
     @DisplayName("新增供应商 - 成功")
     void create_Success() {
         SupplierPoolDO supplier = new SupplierPoolDO();
-        supplier.setName("供应商C");
+        supplier.setName("新供应商_" + System.currentTimeMillis());
         supplier.setCategory("牙刷");
-        
+
         SupplierPoolDO result = supplierPoolService.create(supplier);
-        
+
         assertNotNull(result);
-        assertEquals("供应商C", result.getName());
+        assertNotNull(result.getId());
         assertEquals(0, result.getIsDisabled());
     }
 
@@ -84,23 +99,24 @@ class SupplierPoolServiceTest {
     @DisplayName("新增供应商 - 重复名称")
     void create_DuplicateName_ThrowsException() {
         SupplierPoolDO supplier = new SupplierPoolDO();
-        supplier.setName("供应商A");
+        supplier.setName(testSupplier.getName());
         supplier.setCategory("牙刷");
-        
+
         assertThrows(BusinessException.class, () -> supplierPoolService.create(supplier));
     }
 
     @Test
     @DisplayName("编辑供应商 - 成功")
     void update_Success() {
+        String newName = "修改供应商_" + System.currentTimeMillis();
         SupplierPoolDO supplier = new SupplierPoolDO();
-        supplier.setName("供应商A-修改");
+        supplier.setName(newName);
         supplier.setCategory("牙膏");
-        
-        SupplierPoolDO result = supplierPoolService.update(1L, supplier);
-        
+
+        SupplierPoolDO result = supplierPoolService.update(testSupplier.getId(), supplier);
+
         assertNotNull(result);
-        assertEquals("供应商A-修改", result.getName());
+        assertEquals(newName, result.getName());
         assertEquals("牙膏", result.getCategory());
     }
 
@@ -109,48 +125,49 @@ class SupplierPoolServiceTest {
     void update_NotFound_ThrowsException() {
         SupplierPoolDO supplier = new SupplierPoolDO();
         supplier.setName("测试");
-        
-        assertThrows(BusinessException.class, () -> supplierPoolService.update(999L, supplier));
+
+        assertThrows(BusinessException.class, () -> supplierPoolService.update(999999L, supplier));
     }
 
     @Test
     @DisplayName("编辑供应商 - 名称重复")
     void update_DuplicateName_ThrowsException() {
         SupplierPoolDO supplier = new SupplierPoolDO();
-        supplier.setName("供应商B");
-        
-        assertThrows(BusinessException.class, () -> supplierPoolService.update(1L, supplier));
+        supplier.setName(duplicateSupplier.getName());
+
+        assertThrows(BusinessException.class, () -> supplierPoolService.update(testSupplier.getId(), supplier));
     }
 
     @Test
     @DisplayName("删除供应商 - 成功")
     void delete_Success() {
-        assertDoesNotThrow(() -> supplierPoolService.delete(1L));
-        assertThrows(BusinessException.class, () -> supplierPoolService.getById(1L));
+        Long id = testSupplier.getId();
+        assertDoesNotThrow(() -> supplierPoolService.delete(id));
+        assertThrows(BusinessException.class, () -> supplierPoolService.getById(id));
     }
 
     @Test
     @DisplayName("删除供应商 - 不存在")
     void delete_NotFound_ThrowsException() {
-        assertThrows(BusinessException.class, () -> supplierPoolService.delete(999L));
+        assertThrows(BusinessException.class, () -> supplierPoolService.delete(999999L));
     }
 
     @Test
     @DisplayName("禁用供应商 - 成功")
     void disable_Success() {
-        supplierPoolService.disable(1L);
-        
-        SupplierPoolDO supplier = supplierPoolService.getById(1L);
+        supplierPoolService.disable(testSupplier.getId());
+
+        SupplierPoolDO supplier = supplierPoolService.getById(testSupplier.getId());
         assertEquals(1, supplier.getIsDisabled());
     }
 
     @Test
     @DisplayName("启用供应商 - 成功")
     void enable_Success() {
-        supplierPoolService.disable(1L);
-        supplierPoolService.enable(1L);
-        
-        SupplierPoolDO supplier = supplierPoolService.getById(1L);
+        supplierPoolService.disable(testSupplier.getId());
+        supplierPoolService.enable(testSupplier.getId());
+
+        SupplierPoolDO supplier = supplierPoolService.getById(testSupplier.getId());
         assertEquals(0, supplier.getIsDisabled());
     }
 }

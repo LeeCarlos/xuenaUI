@@ -13,7 +13,7 @@
         SELECT * FROM sp_category WHERE is_deleted = 0 ORDER BY gmt_create DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.CategoryDO">
+    <insert id="insert" parameterType="com.xuena.supplier.entity.CategoryDO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sp_category (name, description) VALUES (#{name}, #{description})
     </insert>
     
