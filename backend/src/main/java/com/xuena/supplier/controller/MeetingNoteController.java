@@ -2,7 +2,7 @@ package com.xuena.supplier.controller;
 
 import com.xuena.supplier.entity.MeetingNoteDO;
 import com.xuena.supplier.service.MeetingNoteService;
-import com.xuena.supplier.util.ResultVO;
+import com.xuena.supplier.vo.ResultVO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

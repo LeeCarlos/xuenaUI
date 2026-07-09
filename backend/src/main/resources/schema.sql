@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS sp_category (
 
 CREATE TABLE IF NOT EXISTS sp_monthly_assessment (
     id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
-    year_month VARCHAR(7) NOT NULL COMMENT '年月（格式：YYYY-MM）',
+    `year_month` VARCHAR(7) NOT NULL COMMENT '年月（格式：YYYY-MM）',
     supplier_name VARCHAR(255) NOT NULL COMMENT '供应商名称',
     category VARCHAR(100) NULL COMMENT '供应商类别',
     total DECIMAL(5,1) NULL COMMENT '总分',
@@ -62,29 +62,29 @@ CREATE TABLE IF NOT EXISTS sp_monthly_assessment (
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
     gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    INDEX idx_year_month (year_month),
+    INDEX idx_year_month (`year_month`),
     INDEX idx_category (category),
     INDEX idx_grade (grade),
-    UNIQUE INDEX uk_year_month_supplier (year_month, supplier_name)
+    UNIQUE INDEX uk_year_month_supplier (`year_month`, supplier_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='月度考核记录表';
 
 CREATE TABLE IF NOT EXISTS sp_department_score (
     id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
-    year_month VARCHAR(7) NOT NULL COMMENT '年月（格式：YYYY-MM）',
+    `year_month` VARCHAR(7) NOT NULL COMMENT '年月（格式：YYYY-MM）',
     supplier_name VARCHAR(255) NOT NULL COMMENT '供应商名称',
     department VARCHAR(50) NOT NULL COMMENT '提交部门（计划/采购/质量/包开）',
     dimension_group VARCHAR(20) NOT NULL COMMENT '维度组（A/B/C/D1/D2）',
     dimension_score DECIMAL(5,1) NULL COMMENT '维度总分',
-    sub_scores JSON NULL COMMENT '子项分数JSON（如 {"a1":7,"a2":8}）',
+    sub_scores JSON NULL COMMENT '子项分数JSON',
     exception_reason TEXT NULL COMMENT '异常原因说明',
     status VARCHAR(20) DEFAULT 'DRAFT' COMMENT '状态（DRAFT-草稿，SUBMITTED-已提交）',
     file_name VARCHAR(255) NULL COMMENT '原始文件名',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
     gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    INDEX idx_year_month_dept (year_month, department),
+    INDEX idx_year_month_dept (`year_month`, department),
     INDEX idx_dimension_group (dimension_group),
-    UNIQUE INDEX uk_year_month_supplier_dept (year_month, supplier_name, department)
+    UNIQUE INDEX uk_year_month_supplier_dept (`year_month`, supplier_name, department)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门打分明细表';
 
 CREATE TABLE IF NOT EXISTS sp_meeting_note (

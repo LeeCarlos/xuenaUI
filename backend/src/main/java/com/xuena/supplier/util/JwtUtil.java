@@ -39,6 +39,16 @@ public class JwtUtil {
                 .compact();
     }
 
+    public String generateToken(String userId, String username) {
+        return Jwts.builder()
+                .subject(userId)
+                .claim("username", username)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expire))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     public String generateRefreshToken(Long userId) {
         return Jwts.builder()
                 .subject(String.valueOf(userId))

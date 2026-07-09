@@ -1,0 +1,7 @@
+com\xuena\supplier\service\AuthServiceTest.class
+com\xuena\supplier\service\DepartmentScoreServiceTest.class
+com\xuena\supplier\service\MonthlyAssessmentServiceTest.class
+com\xuena\supplier\service\CategoryServiceTest.class
+com\xuena\supplier\service\SupplierPoolServiceTest.class
+com\xuena\supplier\util\JwtUtilTest.class
+com\xuena\supplier\util\PasswordUtilTest.class

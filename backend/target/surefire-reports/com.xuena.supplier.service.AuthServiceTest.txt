@@ -1,0 +1,28 @@
+-------------------------------------------------------------------------------
+Test set: com.xuena.supplier.service.AuthServiceTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 8.974 s <<< FAILURE! -- in com.xuena.supplier.service.AuthServiceTest
+com.xuena.supplier.service.AuthServiceTest.refresh_Success -- Time elapsed: 0.111 s <<< ERROR!
+com.xuena.supplier.exception.BusinessException: 用户名或密码错误
+	at com.xuena.supplier.service.impl.AuthServiceImpl.login(AuthServiceImpl.java:52)
+	at com.xuena.supplier.service.AuthServiceTest.refresh_Success(AuthServiceTest.java:67)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.xuena.supplier.service.AuthServiceTest.login_Success -- Time elapsed: 0.078 s <<< ERROR!
+com.xuena.supplier.exception.BusinessException: 用户名或密码错误
+	at com.xuena.supplier.service.impl.AuthServiceImpl.login(AuthServiceImpl.java:52)
+	at com.xuena.supplier.service.AuthServiceTest.login_Success(AuthServiceTest.java:30)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.xuena.supplier.service.AuthServiceTest.login_ContainsRolesAndPermissions -- Time elapsed: 0.086 s <<< ERROR!
+com.xuena.supplier.exception.BusinessException: 用户名或密码错误
+	at com.xuena.supplier.service.impl.AuthServiceImpl.login(AuthServiceImpl.java:52)
+	at com.xuena.supplier.service.AuthServiceTest.login_ContainsRolesAndPermissions(AuthServiceTest.java:91)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+

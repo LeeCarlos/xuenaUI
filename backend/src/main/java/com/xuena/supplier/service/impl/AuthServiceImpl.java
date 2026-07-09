@@ -10,7 +10,6 @@ import com.xuena.supplier.mapper.UserMapper;
 import com.xuena.supplier.mapper.UserRoleMapper;
 import com.xuena.supplier.service.AuthService;
 import com.xuena.supplier.util.JwtUtil;
-import com.xuena.supplier.util.PasswordUtil;
 import com.xuena.supplier.vo.request.LoginRequest;
 import com.xuena.supplier.vo.response.LoginResponse;
 import org.springframework.stereotype.Service;
@@ -28,15 +27,18 @@ public class AuthServiceImpl implements AuthService {
     private final PermissionMapper permissionMapper;
     private final UserRoleMapper userRoleMapper;
     private final JwtUtil jwtUtil;
+    private final com.xuena.supplier.util.PasswordUtil passwordUtil;
 
     public AuthServiceImpl(UserMapper userMapper, RoleMapper roleMapper, MenuMapper menuMapper,
-                          PermissionMapper permissionMapper, UserRoleMapper userRoleMapper, JwtUtil jwtUtil) {
+                          PermissionMapper permissionMapper, UserRoleMapper userRoleMapper, JwtUtil jwtUtil,
+                          com.xuena.supplier.util.PasswordUtil passwordUtil) {
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
         this.menuMapper = menuMapper;
         this.permissionMapper = permissionMapper;
         this.userRoleMapper = userRoleMapper;
         this.jwtUtil = jwtUtil;
+        this.passwordUtil = passwordUtil;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
-        if (!PasswordUtil.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordUtil.matches(request.getPassword(), user.getPassword())) {
             throw new BusinessException("用户名或密码错误");
         }
 
@@ -68,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
         List<MenuDO> menus = menuMapper.selectByRoleIds(roleIds);
 
         String token = jwtUtil.generateToken(String.valueOf(user.getId()), user.getUsername());
-        String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(user.getId()));
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
         LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
         userInfo.setId(user.getId());
@@ -93,14 +95,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse refresh(String refreshToken) {
-        String userId = jwtUtil.extractUserId(refreshToken);
+        String userId = String.valueOf(jwtUtil.getUserIdFromToken(refreshToken));
         UserDO user = userMapper.selectById(Long.parseLong(userId));
         if (user == null) {
             throw new BusinessException("无效的刷新令牌");
         }
 
         String token = jwtUtil.generateToken(String.valueOf(user.getId()), user.getUsername());
-        String newRefreshToken = jwtUtil.generateRefreshToken(String.valueOf(user.getId()));
+        String newRefreshToken = jwtUtil.generateRefreshToken(user.getId());
 
         List<Long> roleIds = userRoleMapper.selectRoleIdsByUserId(user.getId());
         List<String> roleCodes = roleIds.stream()

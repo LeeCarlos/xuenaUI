@@ -1,7 +1,7 @@
 package com.xuena.supplier.controller;
 
 import com.xuena.supplier.service.AuthService;
-import com.xuena.supplier.util.ResultVO;
+import com.xuena.supplier.vo.ResultVO;
 import com.xuena.supplier.vo.request.LoginRequest;
 import com.xuena.supplier.vo.response.LoginResponse;
 import jakarta.validation.Valid;

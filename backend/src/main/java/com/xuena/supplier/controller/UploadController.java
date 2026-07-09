@@ -5,12 +5,13 @@ import com.xuena.supplier.entity.SupplierPoolDO;
 import com.xuena.supplier.service.MonthlyAssessmentService;
 import com.xuena.supplier.service.SupplierPoolService;
 import com.xuena.supplier.util.EasyExcelUtil;
-import com.xuena.supplier.util.ResultVO;
+import com.xuena.supplier.vo.ResultVO;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -27,7 +28,7 @@ public class UploadController {
 
     @PostMapping("/supplier")
     public ResultVO<Void> uploadSupplierPool(@RequestParam("file") MultipartFile file) throws IOException {
-        List<SupplierPoolDO> suppliers = EasyExcelUtil.readExcel(file.getInputStream(), SupplierPoolDO.class);
+        List<SupplierPoolDO> suppliers = EasyExcelUtil.readExcel(file, SupplierPoolDO.class);
         for (SupplierPoolDO supplier : suppliers) {
             try {
                 supplierPoolService.create(supplier);
@@ -39,7 +40,7 @@ public class UploadController {
 
     @PostMapping("/assessment")
     public ResultVO<Void> uploadAssessment(@RequestParam("file") MultipartFile file) throws IOException {
-        List<MonthlyAssessmentDO> assessments = EasyExcelUtil.readExcel(file.getInputStream(), MonthlyAssessmentDO.class);
+        List<MonthlyAssessmentDO> assessments = EasyExcelUtil.readExcel(file, MonthlyAssessmentDO.class);
         for (MonthlyAssessmentDO assessment : assessments) {
             try {
                 assessment.setFileName(file.getOriginalFilename());
@@ -52,11 +53,11 @@ public class UploadController {
 
     @GetMapping("/template/supplier")
     public void downloadSupplierTemplate(HttpServletResponse response) throws IOException {
-        EasyExcelUtil.writeExcel(response, "supplier_template.xlsx", SupplierPoolDO.class, null);
+        EasyExcelUtil.writeExcel(response, "supplier_template.xlsx", SupplierPoolDO.class, new ArrayList<>());
     }
 
     @GetMapping("/template/assessment")
     public void downloadAssessmentTemplate(HttpServletResponse response) throws IOException {
-        EasyExcelUtil.writeExcel(response, "assessment_template.xlsx", MonthlyAssessmentDO.class, null);
+        EasyExcelUtil.writeExcel(response, "assessment_template.xlsx", MonthlyAssessmentDO.class, new ArrayList<>());
     }
 }
