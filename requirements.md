@@ -307,6 +307,8 @@
 
 ### 3.1 ER 关系图
 
+#### 业务数据关系
+
 ```
 ┌──────────────────────┐     1:N     ┌────────────────────────────┐
 │  sp_supplier_pool    │─────────────►│ sp_monthly_assessment     │
@@ -326,6 +328,36 @@
                                    │ sp_meeting_note            │
                                    │   (会议记录)                │
                                    └────────────────────────────┘
+```
+
+#### 权限管理关系
+
+```
+┌──────────────────────┐     N:M     ┌──────────────────────┐     N:M     ┌──────────────────────┐
+│   sp_user            │─────────────►│   sp_user_role       │◄─────────────│   sp_role            │
+│   (用户表)            │             │   (用户角色关联)       │             │   (角色表)            │
+└──────────────────────┘             └──────────────────────┘             └──────────────────────┘
+                                              │                              │
+                                              │                              │ N:M
+                                              │                              ▼
+                                              │                  ┌──────────────────────┐
+                                              │                  │   sp_role_menu       │
+                                              │                  │   (角色菜单关联)       │
+                                              │                  └──────────────────────┘
+                                              │                              │
+                                              │                              │ N:1
+                                              │                              ▼
+                                              │                  ┌──────────────────────┐
+                                              │                  │   sp_menu            │
+                                              │                  │   (菜单表)            │
+                                              │                  └──────────────────────┘
+                                              │
+                                              │ N:M
+                                              ▼
+                                    ┌──────────────────────┐     N:M     ┌──────────────────────┐
+                                    │   sp_role_permission │◄─────────────│   sp_permission      │
+                                    │   (角色权限关联)       │             │   (权限表)            │
+                                    └──────────────────────┘             └──────────────────────┘
 ```
 
 ### 3.2 数据库表结构
@@ -472,7 +504,6 @@
 | id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
 | username | VARCHAR(100) | NOT NULL | 用户名 |
 | password | VARCHAR(255) | NOT NULL | 密码（加密存储） |
-| role | VARCHAR(20) | NOT NULL | 角色（ADMIN/USER） |
 | department | VARCHAR(50) | NULL | 所属部门（计划/采购/质量/包开） |
 | real_name | VARCHAR(100) | NULL | 真实姓名 |
 | email | VARCHAR(255) | NULL | 邮箱 |
@@ -484,6 +515,123 @@
 **索引**：
 - `uk_username`：`(username)` 唯一索引
 - `idx_department`：`(department)` 普通索引
+
+#### 3.2.7 sp_role（角色表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
+| name | VARCHAR(100) | NOT NULL | 角色名称（如：超级管理员、质量部管理员） |
+| code | VARCHAR(50) | NOT NULL | 角色编码（如：SUPER_ADMIN、QUALITY_ADMIN） |
+| description | VARCHAR(500) | NULL | 角色描述 |
+| is_system | TINYINT UNSIGNED | DEFAULT 0 | 是否系统角色（0-自定义，1-系统内置） |
+| is_enabled | TINYINT UNSIGNED | DEFAULT 1 | 是否启用（0-禁用，1-启用） |
+| is_deleted | TINYINT UNSIGNED | DEFAULT 0 | 是否删除（0-未删除，1-已删除） |
+| gmt_create | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| gmt_modified | DATETIME | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+
+**索引**：
+- `uk_role_code`：`(code)` 唯一索引
+- `idx_role_name`：`(name)` 普通索引
+
+**系统预设角色**：
+
+| code | name | description |
+|------|------|-------------|
+| SUPER_ADMIN | 超级管理员 | 拥有所有权限 |
+| ADMIN | 管理员 | 拥有大部分管理权限 |
+| QUALITY_ADMIN | 质量部管理员 | 质量部打分管理权限 |
+| PLANNING_ADMIN | 计划部管理员 | 计划部打分管理权限 |
+| PACKAGING_ADMIN | 包开部管理员 | 包开部打分管理权限 |
+| PROCUREMENT_ADMIN | 采购部管理员 | 采购部打分管理权限 |
+| USER | 普通用户 | 仅查看权限 |
+
+#### 3.2.8 sp_permission（权限表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
+| name | VARCHAR(100) | NOT NULL | 权限名称（如：用户管理-新增） |
+| code | VARCHAR(100) | NOT NULL | 权限编码（如：user:add） |
+| module | VARCHAR(50) | NOT NULL | 所属模块（如：system、assessment） |
+| type | VARCHAR(20) | DEFAULT 'FUNCTION' | 权限类型（MENU-菜单权限，FUNCTION-功能权限，DATA-数据权限） |
+| description | VARCHAR(500) | NULL | 权限描述 |
+| parent_id | BIGINT UNSIGNED | DEFAULT 0 | 父权限ID（0表示顶级） |
+| sort_order | INT | DEFAULT 0 | 排序号 |
+| is_deleted | TINYINT UNSIGNED | DEFAULT 0 | 是否删除（0-未删除，1-已删除） |
+| gmt_create | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| gmt_modified | DATETIME | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+
+**索引**：
+- `uk_permission_code`：`(code)` 唯一索引
+- `idx_module`：`(module)` 普通索引
+- `idx_parent_id`：`(parent_id)` 普通索引
+
+**权限编码规范**：`模块:资源:操作`，如 `user:list`、`scoring:upload`
+
+#### 3.2.9 sp_menu（菜单表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
+| name | VARCHAR(100) | NOT NULL | 菜单名称 |
+| path | VARCHAR(255) | NULL | 路由路径（如：/dashboard） |
+| component | VARCHAR(255) | NULL | 组件路径（如：pages/Dashboard） |
+| icon | VARCHAR(100) | NULL | 菜单图标（如：dashboard） |
+| parent_id | BIGINT UNSIGNED | DEFAULT 0 | 父菜单ID（0表示顶级菜单） |
+| sort_order | INT | DEFAULT 0 | 排序号 |
+| type | VARCHAR(20) | DEFAULT 'MENU' | 菜单类型（MENU-菜单，DIRECTORY-目录，BUTTON-按钮） |
+| permission_code | VARCHAR(100) | NULL | 关联权限编码 |
+| is_visible | TINYINT UNSIGNED | DEFAULT 1 | 是否显示（0-隐藏，1-显示） |
+| is_deleted | TINYINT UNSIGNED | DEFAULT 0 | 是否删除（0-未删除，1-已删除） |
+| gmt_create | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| gmt_modified | DATETIME | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新时间 |
+
+**索引**：
+- `uk_menu_path`：`(path)` 唯一索引（仅限非空路径）
+- `idx_parent_id`：`(parent_id)` 普通索引
+
+#### 3.2.10 sp_user_role（用户角色关联表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
+| user_id | BIGINT UNSIGNED | NOT NULL | 用户ID |
+| role_id | BIGINT UNSIGNED | NOT NULL | 角色ID |
+| gmt_create | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+**索引**：
+- `uk_user_role`：`(user_id, role_id)` 唯一索引
+- `idx_user_id`：`(user_id)` 普通索引
+- `idx_role_id`：`(role_id)` 普通索引
+
+#### 3.2.11 sp_role_permission（角色权限关联表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
+| role_id | BIGINT UNSIGNED | NOT NULL | 角色ID |
+| permission_id | BIGINT UNSIGNED | NOT NULL | 权限ID |
+| gmt_create | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+**索引**：
+- `uk_role_permission`：`(role_id, permission_id)` 唯一索引
+- `idx_role_id`：`(role_id)` 普通索引
+- `idx_permission_id`：`(permission_id)` 普通索引
+
+#### 3.2.12 sp_role_menu（角色菜单关联表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT UNSIGNED | PRIMARY KEY, AUTO_INCREMENT | 主键 |
+| role_id | BIGINT UNSIGNED | NOT NULL | 角色ID |
+| menu_id | BIGINT UNSIGNED | NOT NULL | 菜单ID |
+| gmt_create | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+**索引**：
+- `uk_role_menu`：`(role_id, menu_id)` 唯一索引
+- `idx_role_id`：`(role_id)` 普通索引
+- `idx_menu_id`：`(menu_id)` 普通索引
 
 ---
 
@@ -519,9 +667,12 @@
     "user": {
       "id": 1,
       "username": "string",
-      "name": "string",
-      "role": "ADMIN"
-    }
+      "realName": "string",
+      "department": "string",
+      "roles": ["SUPER_ADMIN", "ADMIN"],
+      "permissions": ["user:list", "user:add", "role:list"]
+    },
+    "menus": []
   }
 }
 ```
@@ -1040,9 +1191,261 @@
 ```json
 {
   "supplierName": "供应商A",
-  "monthFrom": "3月",
-  "monthTo": "4月",
+  "monthFrom": "2026-03",
+  "monthTo": "2026-04",
   "note": "会议记录内容..."
+}
+```
+
+### 4.10 用户管理接口
+
+| 接口路径 | 方法 | 描述 |
+|----------|------|------|
+| `/api/user/list` | GET | 分页查询用户列表 |
+| `/api/user/get/{id}` | GET | 根据ID查询用户 |
+| `/api/user/add` | POST | 新增用户 |
+| `/api/user/update` | PUT | 更新用户 |
+| `/api/user/delete/{id}` | DELETE | 删除用户 |
+| `/api/user/assign-role` | POST | 分配角色给用户 |
+| `/api/user/get-roles/{userId}` | GET | 获取用户的角色列表 |
+
+#### GET /api/user/list
+
+请求参数：
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| page | int | 页码，默认1 |
+| size | int | 每页条数，默认20 |
+| username | string | 用户名搜索（可选） |
+| department | string | 部门筛选（可选） |
+| roleCode | string | 角色编码筛选（可选） |
+
+响应体：
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "username": "admin",
+        "realName": "管理员",
+        "department": "采购",
+        "email": "admin@example.com",
+        "isEnabled": true,
+        "roles": ["SUPER_ADMIN"],
+        "gmtCreate": "2026-01-01 00:00:00"
+      }
+    ],
+    "total": 100,
+    "page": 1,
+    "size": 20
+  }
+}
+```
+
+#### POST /api/user/add
+
+请求体：
+```json
+{
+  "username": "newuser",
+  "password": "password123",
+  "realName": "新用户",
+  "department": "质量",
+  "email": "newuser@example.com",
+  "roleIds": [2, 3]
+}
+```
+
+#### POST /api/user/assign-role
+
+请求体：
+```json
+{
+  "userId": 1,
+  "roleIds": [1, 2]
+}
+```
+
+### 4.11 角色管理接口
+
+| 接口路径 | 方法 | 描述 |
+|----------|------|------|
+| `/api/role/list` | GET | 查询角色列表 |
+| `/api/role/get/{id}` | GET | 根据ID查询角色 |
+| `/api/role/add` | POST | 新增角色 |
+| `/api/role/update` | PUT | 更新角色 |
+| `/api/role/delete/{id}` | DELETE | 删除角色 |
+| `/api/role/assign-permission` | POST | 分配权限给角色 |
+| `/api/role/assign-menu` | POST | 分配菜单给角色 |
+| `/api/role/get-permissions/{roleId}` | GET | 获取角色的权限列表 |
+| `/api/role/get-menus/{roleId}` | GET | 获取角色的菜单列表 |
+
+#### POST /api/role/add
+
+请求体：
+```json
+{
+  "name": "质量部管理员",
+  "code": "QUALITY_ADMIN",
+  "description": "质量部打分管理权限",
+  "permissionIds": [1, 2, 3],
+  "menuIds": [4, 5, 6]
+}
+```
+
+#### POST /api/role/assign-permission
+
+请求体：
+```json
+{
+  "roleId": 1,
+  "permissionIds": [1, 2, 3, 4, 5]
+}
+```
+
+#### POST /api/role/assign-menu
+
+请求体：
+```json
+{
+  "roleId": 1,
+  "menuIds": [1, 2, 3, 4, 5]
+}
+```
+
+### 4.12 权限管理接口
+
+| 接口路径 | 方法 | 描述 |
+|----------|------|------|
+| `/api/permission/list` | GET | 查询权限列表 |
+| `/api/permission/get/{id}` | GET | 根据ID查询权限 |
+| `/api/permission/add` | POST | 新增权限 |
+| `/api/permission/update` | PUT | 更新权限 |
+| `/api/permission/delete/{id}` | DELETE | 删除权限 |
+| `/api/permission/tree` | GET | 获取权限树形结构 |
+
+#### POST /api/permission/add
+
+请求体：
+```json
+{
+  "name": "用户管理-新增",
+  "code": "user:add",
+  "module": "system",
+  "type": "FUNCTION",
+  "description": "新增用户权限",
+  "parentId": 0,
+  "sortOrder": 1
+}
+```
+
+#### GET /api/permission/tree
+
+响应体：
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "name": "系统管理",
+      "code": "system",
+      "module": "system",
+      "type": "MENU",
+      "children": [
+        {
+          "id": 2,
+          "name": "用户管理-列表",
+          "code": "user:list",
+          "module": "system",
+          "type": "FUNCTION",
+          "children": []
+        },
+        {
+          "id": 3,
+          "name": "用户管理-新增",
+          "code": "user:add",
+          "module": "system",
+          "type": "FUNCTION",
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 4.13 菜单管理接口
+
+| 接口路径 | 方法 | 描述 |
+|----------|------|------|
+| `/api/menu/list` | GET | 查询菜单列表 |
+| `/api/menu/get/{id}` | GET | 根据ID查询菜单 |
+| `/api/menu/add` | POST | 新增菜单 |
+| `/api/menu/update` | PUT | 更新菜单 |
+| `/api/menu/delete/{id}` | DELETE | 删除菜单 |
+| `/api/menu/tree` | GET | 获取菜单树形结构 |
+| `/api/menu/user-menu` | GET | 获取当前用户的菜单树 |
+
+#### POST /api/menu/add
+
+请求体：
+```json
+{
+  "name": "供应商池管理",
+  "path": "/pool",
+  "component": "pages/Pool",
+  "icon": "database",
+  "parentId": 0,
+  "sortOrder": 5,
+  "type": "MENU",
+  "permissionCode": "pool:list",
+  "isVisible": true
+}
+```
+
+#### GET /api/menu/user-menu
+
+响应体：
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "name": "总览趋势",
+      "path": "/dashboard",
+      "component": "pages/Dashboard",
+      "icon": "dashboard",
+      "parentId": 0,
+      "type": "MENU",
+      "children": []
+    },
+    {
+      "id": 2,
+      "name": "供应商管理",
+      "icon": "user",
+      "parentId": 0,
+      "type": "DIRECTORY",
+      "children": [
+        {
+          "id": 3,
+          "name": "供应商池",
+          "path": "/pool",
+          "component": "pages/Pool",
+          "icon": "database",
+          "parentId": 2,
+          "type": "MENU",
+          "children": []
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -1099,7 +1502,12 @@
 ├── /rank           # 排名变动
 ├── /detail         # 明细数据
 ├── /pool           # 供应商池管理
-└── /scoring        # 手动打分
+├── /scoring        # 手动打分
+└── /system         # 系统管理
+    ├── /user       # 用户管理
+    ├── /role       # 角色管理
+    ├── /permission # 权限管理
+    └── /menu       # 菜单管理
 ```
 
 ### 6.2 组件结构
@@ -1125,12 +1533,23 @@ src/
 │   │   ├── RankTable.jsx
 │   │   ├── DetailTable.jsx
 │   │   ├── PoolTable.jsx
-│   │   └── ScoringTable.jsx
+│   │   ├── ScoringTable.jsx
+│   │   ├── UserTable.jsx
+│   │   ├── RoleTable.jsx
+│   │   ├── PermissionTable.jsx
+│   │   └── MenuTable.jsx
 │   ├── Dropdowns/        # 下拉选择组件
 │   │   ├── MultiSelect.jsx
 │   │   └── YearMonthPicker.jsx  # 年月选择器组件
+│   ├── Tree/             # 树形组件
+│   │   ├── PermissionTree.jsx
+│   │   └── MenuTree.jsx
 │   └── Modal/            # 弹窗组件
-│       └── PoolModal.jsx
+│       ├── PoolModal.jsx
+│       ├── UserModal.jsx
+│       ├── RoleModal.jsx
+│       ├── PermissionModal.jsx
+│       └── MenuModal.jsx
 ├── pages/                # 页面组件
 │   ├── Login.jsx
 │   ├── Dashboard.jsx
@@ -1138,7 +1557,12 @@ src/
 │   ├── Rank.jsx
 │   ├── Detail.jsx
 │   ├── Pool.jsx
-│   └── Scoring.jsx
+│   ├── Scoring.jsx
+│   └── System/           # 系统管理页面
+│       ├── User.jsx
+│       ├── Role.jsx
+│       ├── Permission.jsx
+│       └── Menu.jsx
 ├── services/             # API 服务
 │   ├── auth.js
 │   ├── upload.js
@@ -1147,13 +1571,21 @@ src/
 │   ├── rank.js
 │   ├── detail.js
 │   ├── pool.js
-│   └── scoring.js
+│   ├── scoring.js
+│   ├── user.js
+│   ├── role.js
+│   ├── permission.js
+│   └── menu.js
 ├── utils/                # 工具函数
 │   ├── request.js        # 请求封装
 │   ├── echarts.js        # ECharts 封装
-│   └── helpers.js        # 辅助函数
-└── store/                # 状态管理
-    └── index.js
+│   ├── helpers.js        # 辅助函数
+│   └── permission.js     # 权限校验工具
+├── store/                # 状态管理
+│   ├── index.js
+│   └── permission.js     # 权限状态管理
+└── hooks/                # 自定义hooks
+    └── usePermission.js  # 权限校验hook
 ```
 
 ### 6.3 手动打分页面工作流
@@ -1191,6 +1623,81 @@ src/
   - 采购部：解析 B 维度子项（b1-b5）和 D2 维度子项（d2a-d2e）
 - 解析后的数据直接存入 `sp_department_score` 表，不进行自动计算
 
+### 6.4 系统管理页面工作流
+
+#### 6.4.1 用户管理页面（User.jsx）
+
+1. **查询区**
+   - 用户名搜索框
+   - 部门下拉筛选
+   - 角色下拉筛选
+   - 状态筛选（启用/禁用）
+
+2. **操作按钮区**
+   - 新增用户按钮
+   - 批量删除按钮
+
+3. **用户列表区**
+   - 显示用户基本信息（用户名、真实姓名、部门、邮箱、状态）
+   - 操作列：编辑、删除、分配角色
+
+4. **分配角色弹窗**
+   - 角色树形选择器
+   - 已选角色列表
+   - 确定/取消按钮
+
+#### 6.4.2 角色管理页面（Role.jsx）
+
+1. **查询区**
+   - 角色名称搜索框
+   - 角色编码搜索框
+
+2. **操作按钮区**
+   - 新增角色按钮
+
+3. **角色列表区**
+   - 显示角色信息（名称、编码、描述、状态）
+   - 操作列：编辑、删除、分配权限、分配菜单
+
+4. **分配权限弹窗**
+   - 权限树形选择器
+   - 已选权限列表
+
+5. **分配菜单弹窗**
+   - 菜单树形选择器
+   - 已选菜单列表
+
+#### 6.4.3 权限管理页面（Permission.jsx）
+
+1. **权限树形展示区**
+   - 以树形结构展示所有权限
+   - 支持展开/折叠
+   - 显示权限名称、编码、类型、所属模块
+
+2. **操作按钮区**
+   - 新增权限按钮
+
+3. **新增/编辑弹窗**
+   - 权限名称、编码、模块、类型
+   - 父权限选择
+   - 排序号、描述
+
+#### 6.4.4 菜单管理页面（Menu.jsx）
+
+1. **菜单树形展示区**
+   - 以树形结构展示所有菜单
+   - 支持拖拽排序
+   - 显示菜单名称、路径、图标、类型
+
+2. **操作按钮区**
+   - 新增菜单按钮
+
+3. **新增/编辑弹窗**
+   - 菜单名称、路径、组件、图标
+   - 父菜单选择、排序号
+   - 菜单类型（目录/菜单/按钮）
+   - 关联权限编码、是否显示
+
 ---
 
 ## 7. 后端项目结构
@@ -1211,7 +1718,11 @@ backend/
 │       │   │   ├── DetailController.java
 │       │   │   ├── PoolController.java
 │       │   │   ├── ScoringController.java
-│       │   │   └── MeetingNoteController.java
+│       │   │   ├── MeetingNoteController.java
+│       │   │   ├── UserController.java
+│       │   │   ├── RoleController.java
+│       │   │   ├── PermissionController.java
+│       │   │   └── MenuController.java
 │       │   ├── service/              # 业务逻辑层接口
 │       │   │   ├── AuthService.java
 │       │   │   ├── UploadService.java
@@ -1221,7 +1732,11 @@ backend/
 │       │   │   ├── DetailService.java
 │       │   │   ├── PoolService.java
 │       │   │   ├── ScoringService.java
-│       │   │   └── MeetingNoteService.java
+│       │   │   ├── MeetingNoteService.java
+│       │   │   ├── UserService.java
+│       │   │   ├── RoleService.java
+│       │   │   ├── PermissionService.java
+│       │   │   └── MenuService.java
 │       │   ├── service/impl/         # 业务逻辑层实现
 │       │   │   ├── AuthServiceImpl.java
 │       │   │   ├── UploadServiceImpl.java
@@ -1231,41 +1746,76 @@ backend/
 │       │   │   ├── DetailServiceImpl.java
 │       │   │   ├── PoolServiceImpl.java
 │       │   │   ├── ScoringServiceImpl.java
-│       │   │   └── MeetingNoteServiceImpl.java
+│       │   │   ├── MeetingNoteServiceImpl.java
+│       │   │   ├── UserServiceImpl.java
+│       │   │   ├── RoleServiceImpl.java
+│       │   │   ├── PermissionServiceImpl.java
+│       │   │   └── MenuServiceImpl.java
 │       │   ├── mapper/               # 数据访问层（MyBatis Mapper）
 │       │   │   ├── SupplierPoolMapper.java
 │       │   │   ├── MonthlyAssessmentMapper.java
 │       │   │   ├── DepartmentScoreMapper.java
 │       │   │   ├── MeetingNoteMapper.java
 │       │   │   ├── CategoryMapper.java
-│       │   │   └── UserMapper.java
+│       │   │   ├── UserMapper.java
+│       │   │   ├── RoleMapper.java
+│       │   │   ├── PermissionMapper.java
+│       │   │   ├── MenuMapper.java
+│       │   │   ├── UserRoleMapper.java
+│       │   │   ├── RolePermissionMapper.java
+│       │   │   └── RoleMenuMapper.java
 │       │   ├── entity/               # 数据库实体类（DO）
 │       │   │   ├── SupplierPoolDO.java
 │       │   │   ├── MonthlyAssessmentDO.java
 │       │   │   ├── DepartmentScoreDO.java
 │       │   │   ├── MeetingNoteDO.java
 │       │   │   ├── CategoryDO.java
-│       │   │   └── UserDO.java
+│       │   │   ├── UserDO.java
+│       │   │   ├── RoleDO.java
+│       │   │   ├── PermissionDO.java
+│       │   │   ├── MenuDO.java
+│       │   │   ├── UserRoleDO.java
+│       │   │   ├── RolePermissionDO.java
+│       │   │   └── RoleMenuDO.java
 │       │   ├── dto/                  # 数据传输对象
 │       │   │   ├── request/          # 请求 DTO
 │       │   │   │   ├── LoginRequest.java
 │       │   │   │   ├── UploadRequest.java
 │       │   │   │   ├── ScoringSubmitRequest.java
-│       │   │   │   └── PoolQueryRequest.java
+│       │   │   │   ├── PoolQueryRequest.java
+│       │   │   │   ├── UserAddRequest.java
+│       │   │   │   ├── UserUpdateRequest.java
+│       │   │   │   ├── RoleAddRequest.java
+│       │   │   │   ├── PermissionAddRequest.java
+│       │   │   │   ├── MenuAddRequest.java
+│       │   │   │   ├── AssignRoleRequest.java
+│       │   │   │   ├── AssignPermissionRequest.java
+│       │   │   │   └── AssignMenuRequest.java
 │       │   │   └── response/         # 响应 DTO
 │       │   │       ├── LoginResponse.java
 │       │   │       ├── OverviewResponse.java
 │       │   │       ├── ScoringDetailResponse.java
-│       │   │       └── PageResponse.java
+│       │   │       ├── PageResponse.java
+│       │   │       ├── UserResponse.java
+│       │   │       ├── RoleResponse.java
+│       │   │       ├── PermissionResponse.java
+│       │   │       ├── MenuResponse.java
+│       │   │       └── TreeResponse.java
 │       │   ├── vo/                   # 视图对象（展示层专用）
 │       │   │   ├── SupplierVO.java
 │       │   │   ├── AssessmentVO.java
-│       │   │   └── TrendVO.java
+│       │   │   ├── TrendVO.java
+│       │   │   ├── UserVO.java
+│       │   │   ├── RoleVO.java
+│       │   │   ├── PermissionVO.java
+│       │   │   └── MenuVO.java
 │       │   ├── enums/                # 枚举类
 │       │   │   ├── DepartmentEnum.java
 │       │   │   ├── DimensionEnum.java
 │       │   │   ├── GradeEnum.java
-│       │   │   └── StatusEnum.java
+│       │   │   ├── StatusEnum.java
+│       │   │   ├── PermissionTypeEnum.java
+│       │   │   └── MenuTypeEnum.java
 │       │   ├── config/               # 配置类
 │       │   │   ├── SecurityConfig.java
 │       │   │   ├── WebConfig.java
@@ -1295,7 +1845,13 @@ backend/
 │           │   ├── DepartmentScoreMapper.xml
 │           │   ├── MeetingNoteMapper.xml
 │           │   ├── CategoryMapper.xml
-│           │   └── UserMapper.xml
+│           │   ├── UserMapper.xml
+│           │   ├── RoleMapper.xml
+│           │   ├── PermissionMapper.xml
+│           │   ├── MenuMapper.xml
+│           │   ├── UserRoleMapper.xml
+│           │   ├── RolePermissionMapper.xml
+│           │   └── RoleMenuMapper.xml
 │           └── schema.sql            # 数据库初始化脚本
 └── pom.xml                           # Maven 配置
 ```
