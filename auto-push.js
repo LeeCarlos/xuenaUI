@@ -41,7 +41,7 @@ function hasUnpushedCommits() {
         return false;
     }
     
-    const aheadResult = executeCommand(`${GIT_PATH} rev-list --count HEAD..origin/main`);
+    const aheadResult = executeCommand(`${GIT_PATH} rev-list --count origin/main..HEAD`);
     if (!aheadResult.success) {
         return false;
     }
