@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuena.supplier.mapper.MenuMapper">
+    <select id="selectById" parameterType="long" resultType="com.xuena.supplier.entity.MenuDO">
+        SELECT * FROM sp_menu WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <select id="selectList" resultType="com.xuena.supplier.entity.MenuDO">
+        SELECT * FROM sp_menu WHERE is_deleted = 0 ORDER BY parent_id ASC, sort_order ASC
+    </select>
+    
+    <select id="selectByRoleIds" parameterType="list" resultType="com.xuena.supplier.entity.MenuDO">
+        SELECT DISTINCT m.* FROM sp_menu m
+        JOIN sp_role_menu rm ON m.id = rm.menu_id
+        WHERE rm.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        AND m.is_deleted = 0 AND m.is_visible = 1
+        ORDER BY m.parent_id ASC, m.sort_order ASC
+    </select>
+    
+    <insert id="insert" parameterType="com.xuena.supplier.entity.MenuDO">
+        INSERT INTO sp_menu (name, path, component, icon, parent_id, sort_order, type, permission_code, is_visible)
+        VALUES (#{name}, #{path}, #{component}, #{icon}, #{parentId}, #{sortOrder}, #{type}, #{permissionCode}, #{isVisible})
+    </insert>
+    
+    <update id="update" parameterType="com.xuena.supplier.entity.MenuDO">
+        UPDATE sp_menu
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="path != null">path = #{path},</if>
+            <if test="component != null">component = #{component},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="permissionCode != null">permission_code = #{permissionCode},</if>
+            <if test="isVisible != null">is_visible = #{isVisible},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <update id="delete" parameterType="long">
+        UPDATE sp_menu SET is_deleted = 1 WHERE id = #{id}
+    </update>
+    
+    <select id="countByPath" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM sp_menu WHERE path = #{path} AND is_deleted = 0
+    </select>
+    
+    <select id="countByParentId" parameterType="long" resultType="int">
+        SELECT COUNT(*) FROM sp_menu WHERE parent_id = #{parentId} AND is_deleted = 0
+    </select>
+</mapper>

@@ -1,34 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { StoreProvider } from './store'
+import Layout from './components/Layout/Layout'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import SupplierPool from './pages/SupplierPool'
+import Category from './pages/Category'
+import Assessment from './pages/Assessment'
+import DepartmentScore from './pages/DepartmentScore'
+import MeetingNote from './pages/MeetingNote'
+
+function PrivateRoute({ children }) {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    return <Navigate to="/login" />
+  }
+  return children
+}
+
+function PublicRoute({ children }) {
+  const token = localStorage.getItem('token')
+  if (token) {
+    return <Navigate to="/dashboard" />
+  }
+  return children
+}
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <StoreProvider>
+      <Routes>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/dashboard" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
+        <Route path="/supplier/pool" element={<PrivateRoute><Layout><SupplierPool /></Layout></PrivateRoute>} />
+        <Route path="/category" element={<PrivateRoute><Layout><Category /></Layout></PrivateRoute>} />
+        <Route path="/assessment" element={<PrivateRoute><Layout><Assessment /></Layout></PrivateRoute>} />
+        <Route path="/department-score" element={<PrivateRoute><Layout><DepartmentScore /></Layout></PrivateRoute>} />
+        <Route path="/meeting-note" element={<PrivateRoute><Layout><MeetingNote /></Layout></PrivateRoute>} />
+        <Route path="/*" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
+      </Routes>
+    </StoreProvider>
   )
 }
 

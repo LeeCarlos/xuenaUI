@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuena.supplier.mapper.PermissionMapper">
+    <select id="selectById" parameterType="long" resultType="com.xuena.supplier.entity.PermissionDO">
+        SELECT * FROM sp_permission WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <select id="selectByCode" parameterType="string" resultType="com.xuena.supplier.entity.PermissionDO">
+        SELECT * FROM sp_permission WHERE code = #{code} AND is_deleted = 0
+    </select>
+    
+    <select id="selectList" resultType="com.xuena.supplier.entity.PermissionDO">
+        SELECT * FROM sp_permission WHERE is_deleted = 0 ORDER BY parent_id ASC, sort_order ASC
+    </select>
+    
+    <select id="selectByRoleIds" parameterType="list" resultType="com.xuena.supplier.entity.PermissionDO">
+        SELECT DISTINCT p.* FROM sp_permission p
+        JOIN sp_role_permission rp ON p.id = rp.permission_id
+        WHERE rp.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        AND p.is_deleted = 0
+        ORDER BY p.parent_id ASC, p.sort_order ASC
+    </select>
+    
+    <insert id="insert" parameterType="com.xuena.supplier.entity.PermissionDO">
+        INSERT INTO sp_permission (name, code, module, type, description, parent_id, sort_order)
+        VALUES (#{name}, #{code}, #{module}, #{type}, #{description}, #{parentId}, #{sortOrder})
+    </insert>
+    
+    <update id="update" parameterType="com.xuena.supplier.entity.PermissionDO">
+        UPDATE sp_permission
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="code != null">code = #{code},</if>
+            <if test="module != null">module = #{module},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <update id="delete" parameterType="long">
+        UPDATE sp_permission SET is_deleted = 1 WHERE id = #{id}
+    </update>
+    
+    <select id="countByCode" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM sp_permission WHERE code = #{code} AND is_deleted = 0
+    </select>
+</mapper>
