@@ -1,0 +1,14 @@
+*.xlsx
+*.xls
+*.csv
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+dist/
+build/
+.idea/
+.vscode/
+*.swp
+*.bak
+.env

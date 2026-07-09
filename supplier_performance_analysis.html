@@ -1,0 +1,3912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应商绩效考核滚动分析</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+if (typeof XLSX === 'undefined') {
+  document.write('<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root {
+  --primary: #4f6ef7;
+  --primary-light: #eef1ff;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: var(--gray-50); color: var(--gray-900); line-height: 1.6; }
+
+.header { background: linear-gradient(135deg, #4f6ef7 0%, #7c3aed 100%); color: #fff; padding: 28px 40px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(79,110,247,.3); }
+.header h1 { font-size: 22px; font-weight: 700; letter-spacing: .5px; }
+.header p { font-size: 13px; opacity: .85; margin-top: 4px; }
+
+.container { max-width: 1800px; margin: 0 auto; padding: 24px; }
+
+/* Upload Area */
+.upload-section { background: #fff; border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+.upload-area { border: 2px dashed var(--gray-300); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: all .2s; position: relative; }
+.upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: var(--primary-light); }
+.upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-icon { font-size: 36px; margin-bottom: 8px; }
+.upload-text { font-size: 15px; color: var(--gray-700); }
+.upload-hint { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+.months-bar { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.month-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--primary-light); color: var(--primary); border-radius: 20px; font-size: 13px; font-weight: 600; cursor: grab; transition: all .2s; user-select: none; position: relative; }
+.month-tag:active { cursor: grabbing; }
+.month-tag.dragging { opacity: 0.4; transform: scale(0.95); }
+.month-tag.drag-over-left { box-shadow: -3px 0 0 0 var(--primary); }
+.month-tag.drag-over-right { box-shadow: 3px 0 0 0 var(--primary); }
+.month-tag .drag-handle { opacity: .4; font-size: 11px; margin-right: 2px; }
+.month-tag .remove-btn { cursor: pointer; opacity: .5; font-size: 16px; line-height: 1; }
+.month-tag .remove-btn:hover { opacity: 1; }
+
+/* Tabs */
+.tabs { display: flex; gap: 2px; background: var(--gray-200); border-radius: 10px; padding: 3px; margin-bottom: 24px; width: fit-content; }
+.tab { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--gray-500); transition: all .2s; border: none; background: none; }
+.tab.active { background: #fff; color: var(--primary); box-shadow: var(--shadow); }
+.tab:hover:not(.active) { color: var(--gray-700); }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards */
+.card { background: #fff; border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title .icon { width: 6px; height: 20px; border-radius: 3px; background: var(--primary); }
+
+/* Stats Grid */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.stat-card { background: #fff; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.stat-label { font-size: 12px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; }
+.stat-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+.stat-change { font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+.stat-change.up { color: var(--success); }
+.stat-change.down { color: var(--danger); }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(--gray-100); padding: 8px 10px; text-align: center; font-weight: 600; color: var(--gray-700); white-space: nowrap; border-bottom: 2px solid var(--gray-200); position: sticky; z-index: 2; }
+thead tr:first-child th { top: 0; }
+thead tr:nth-child(2) th { top: 36px; }
+thead th.group-a { background: #dbeafe; color: #1e40af; border-bottom: 1px solid #93c5fd; }
+thead th.group-b { background: #fef3c7; color: #92400e; border-bottom: 1px solid #fcd34d; }
+thead th.group-c { background: #d1fae5; color: #065f46; border-bottom: 1px solid #6ee7b7; }
+thead th.group-d { background: #ede9fe; color: #5b21b6; border-bottom: 1px solid #c4b5fd; }
+thead th.sub-a { background: #eff6ff; color: #1e40af; font-size: 11px; }
+thead th.sub-b { background: #fffbeb; color: #92400e; font-size: 11px; }
+thead th.sub-c { background: #ecfdf5; color: #065f46; font-size: 11px; }
+thead th.sub-d { background: #f5f3ff; color: #5b21b6; font-size: 11px; }
+thead th.group-exception { background: #fff1f2; color: #be123c; border-bottom: 1px solid #fda4af; }
+thead th.sub-exception { background: #fff1f2; color: #be123c; font-size: 11px; }
+tbody td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); white-space: nowrap; }
+tbody tr:hover { background: var(--primary-light); }
+.grade-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.grade-A { background: #dcfce7; color: #16a34a; }
+.grade-B { background: #dbeafe; color: #2563eb; }
+.grade-C { background: #fef3c7; color: #d97706; }
+.grade-D { background: #fee2e2; color: #dc2626; }
+
+.trend-up { color: var(--success); font-weight: 600; }
+.trend-down { color: var(--danger); font-weight: 600; }
+.trend-flat { color: var(--gray-500); }
+
+/* Chart */
+.chart-container { width: 100%; height: 420px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+
+/* Analysis Detail */
+.analysis-row { padding: 16px; border: 1px solid var(--gray-200); border-radius: 10px; margin-bottom: 12px; }
+.analysis-row:hover { border-color: var(--primary); }
+.analysis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.analysis-name { font-weight: 600; font-size: 15px; }
+.analysis-badges { display: flex; gap: 6px; }
+.analysis-body { font-size: 13px; color: var(--gray-700); }
+.analysis-body .reason { background: #fffbeb; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border-left: 3px solid var(--warning); }
+.analysis-dims { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+.dim-item { font-size: 12px; color: var(--gray-500); }
+.dim-item span { font-weight: 600; color: var(--gray-900); }
+
+/* Filters */
+.filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.filter-bar select, .filter-bar input { padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 13px; outline: none; }
+.filter-bar select:focus, .filter-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,.1); }
+
+/* Export Button */
+.btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all .2s; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #3d5be5; }
+.btn-outline { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: var(--primary-light); }
+.btn-group { display: flex; gap: 8px; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--gray-500); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* Mini sparkline in table */
+.sparkline-cell { min-width: 100px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header { padding: 20px; }
+  .container { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Loading overlay */
+.loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; z-index: 999; }
+.loading-overlay.hidden { display: none; }
+.spinner { width: 40px; height: 40px; border: 3px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.notification { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 10px; color: #fff; font-size: 14px; z-index: 1000; transform: translateX(120%); transition: transform .3s ease; }
+.notification.show { transform: translateX(0); }
+.notification.success { background: var(--success); }
+.notification.error { background: var(--danger); }
+
+/* Multi-select Dropdown */
+.multi-select-dropdown { position: relative; display: inline-block; min-width: 260px; max-width: 400px; }
+.multi-select-trigger { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 13px; cursor: pointer; background: #fff; color: var(--gray-700); transition: all .2s; user-select: none; }
+.multi-select-trigger:hover { border-color: var(--primary); }
+.multi-select-trigger.open { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,.1); }
+.multi-select-trigger .arrow { font-size: 10px; color: var(--gray-500); transition: transform .2s; margin-left: 8px; }
+.multi-select-trigger.open .arrow { transform: rotate(180deg); }
+.multi-select-dropdown-panel { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; min-width: 100%; max-height: 360px; background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; box-shadow: var(--shadow-md); overflow: hidden; flex-direction: column; }
+.multi-select-dropdown-panel.open { display: flex; }
+.multi-select-search { padding: 8px 10px; border-bottom: 1px solid var(--gray-100); }
+.multi-select-search input { width: 100%; padding: 6px 10px; border: 1px solid var(--gray-200); border-radius: 6px; font-size: 12px; outline: none; }
+.multi-select-search input:focus { border-color: var(--primary); }
+.multi-select-actions { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--gray-100); }
+.multi-select-actions .toggle-all-btn { font-size: 12px; color: var(--primary); cursor: pointer; font-weight: 500; background: none; border: none; padding: 2px 6px; border-radius: 4px; }
+.multi-select-actions .toggle-all-btn:hover { background: var(--primary-light); }
+.multi-select-actions .selected-count { font-size: 11px; color: var(--gray-500); }
+.multi-select-list { overflow-y: auto; max-height: 260px; padding: 4px 0; }
+.multi-select-item { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: background .15s; }
+.multi-select-item:hover { background: var(--primary-light); }
+.multi-select-item input[type="checkbox"] { accent-color: var(--primary); cursor: pointer; margin: 0; }
+.multi-select-item label { cursor: pointer; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; font-weight: normal; }
+.multi-select-empty { padding: 20px; text-align: center; color: var(--gray-500); font-size: 12px; }
+
+/* Supplier Pool */
+.pool-stats { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.pool-stat-item { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--primary-light); border-radius: 8px; font-size: 13px; }
+.pool-stat-item .pool-stat-value { font-weight: 700; color: var(--primary); font-size: 18px; }
+.pool-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+.supplier-pool-table { width: 100%; }
+.supplier-pool-table th { background: var(--gray-100); padding: 10px 12px; text-align: left; font-weight: 600; color: var(--gray-700); border-bottom: 2px solid var(--gray-200); }
+.supplier-pool-table td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
+.supplier-pool-table tr:hover { background: var(--primary-light); }
+.pool-action-btn { padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--gray-300); background: #fff; color: var(--gray-700); transition: all .15s; }
+.pool-action-btn:hover { border-color: var(--primary); color: var(--primary); }
+.pool-action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Meeting notes textarea in rank table */
+.meeting-notes-textarea {
+  width: 100%; min-width: 140px; min-height: 36px; max-height: 80px;
+  padding: 4px 8px; border: 1px solid var(--gray-300); border-radius: 6px;
+  font-size: 12px; outline: none; resize: vertical; font-family: inherit; line-height: 1.4;
+}
+.meeting-notes-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79,110,247,.1); }
+
+/* Scoring Table */
+.scoring-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.scoring-table th { background: var(--gray-100); padding: 10px 8px; text-align: center; font-weight: 600; color: var(--gray-700); border-bottom: 2px solid var(--gray-200); white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+.scoring-table td { padding: 6px 8px; border-bottom: 1px solid var(--gray-100); text-align: center; }
+.scoring-table tbody tr:hover { background: var(--primary-light); }
+.scoring-table .supplier-name-cell { text-align: left; font-weight: 500; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scoring-table .category-cell { text-align: left; color: var(--gray-500); font-size: 12px; }
+.scoring-input { width: 60px; padding: 4px 6px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; text-align: center; outline: none; }
+.scoring-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79,110,247,.1); }
+.scoring-input.out-of-range { border-color: var(--danger); background: #fef2f2; }
+.scoring-total { font-weight: 700; font-size: 14px; color: var(--gray-900); }
+.scoring-conclusion-input { width: 100%; min-width: 120px; padding: 4px 8px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 12px; outline: none; }
+.scoring-conclusion-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79,110,247,.1); }
+.scoring-max-hint { font-size: 10px; color: var(--gray-500); display: block; margin-top: 2px; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 500; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: #fff; border-radius: var(--radius); padding: 28px; width: 420px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.modal-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.modal-form-group { margin-bottom: 16px; }
+.modal-form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 6px; }
+.modal-form-group input, .modal-form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 13px; outline: none; }
+.modal-form-group input:focus, .modal-form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,.1); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* Disabled supplier styles */
+.supplier-disabled { opacity: 0.5; }
+.supplier-disabled td { text-decoration: line-through; color: var(--gray-500) !important; }
+.supplier-disabled td:last-child { text-decoration: none; }
+.pool-action-btn.disable-btn { border-color: var(--warning); color: var(--warning); }
+.pool-action-btn.enable-btn { border-color: var(--success); color: var(--success); }
+
+/* Status badges */
+.status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+.status-draft { background: #fef3c7; color: #d97706; }
+.status-locked { background: #dcfce7; color: #16a34a; }
+
+/* Scoring submit area */
+.scoring-submit-area { display: flex; gap: 8px; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #16a34a; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { background: #d97706; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.scoring-input:read-only { background: var(--gray-100); cursor: not-allowed; }
+.scoring-conclusion-input:read-only { background: var(--gray-100); cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 供应商绩效考核 · 滚动分析平台</h1>
+  <p id="headerInfo">已加载 0 个月份数据 · 0 家供应商</p>
+</div>
+
+<div class="container">
+  <!-- Upload Section -->
+  <div class="upload-section">
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple>
+      <div class="upload-icon">📁</div>
+      <div class="upload-text">点击或拖拽上传新的月度考核明细 Excel 文件</div>
+      <div class="upload-hint">支持 .xlsx / .xls 格式，系统将自动解析并纳入对比分析</div>
+    </div>
+    <div class="months-bar" id="monthsBar"></div>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+    <label style="font-weight:600;font-size:14px;">统计月份：</label>
+    <select id="statsMonth" style="padding:6px 12px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px;outline:none;"></select>
+  </div>
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">📈 总览趋势</button>
+    <button class="tab" data-tab="compare">📊 维度对比</button>
+    <button class="tab" data-tab="rank">🏆 排名变动与差异分析</button>
+    <button class="tab" data-tab="detail">📋 明细数据</button>
+    <button class="tab" data-tab="pool">📦 供应商池</button>
+    <button class="tab" data-tab="scoring">✍️ 手动打分</button>
+  </div>
+
+  <!-- Panel: Overview -->
+  <div class="panel active" id="panel-overview">
+    <div class="card">
+      <div class="card-title"><div class="icon"></div>供应商绩效趋势</div>
+      <div class="filter-bar" style="align-items:flex-start;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label style="font-weight:600;font-size:13px;white-space:nowrap;">类别：</label>
+            <div class="multi-select-dropdown" id="trendCategoryDropdown">
+              <div class="multi-select-trigger" id="trendCategoryTrigger" onclick="toggleTrendCatDropdown()">
+                <span id="trendCategoryDisplay">全部类别</span>
+                <span class="arrow">▼</span>
+              </div>
+              <div class="multi-select-dropdown-panel" id="trendCategoryPanel">
+                <div class="multi-select-actions">
+                  <button class="toggle-all-btn" onclick="toggleAllTrendCats()">全选/取消全选</button>
+                  <span class="selected-count" id="trendCatCount">已选 0 个</span>
+                </div>
+                <div class="multi-select-list" id="trendCategoryList"></div>
+              </div>
+            </div>
+            <label style="font-weight:600;font-size:13px;white-space:nowrap;margin-left:8px;">指标：</label>
+            <div class="multi-select-dropdown" id="trendMetricDropdown">
+              <div class="multi-select-trigger" id="trendMetricTrigger" onclick="toggleTrendMetricDropdown()">
+                <span id="trendMetricDisplay">总分</span>
+                <span class="arrow">▼</span>
+              </div>
+              <div class="multi-select-dropdown-panel" id="trendMetricPanel">
+                <div class="multi-select-actions">
+                  <button class="toggle-all-btn" onclick="toggleAllTrendMetrics()">全选/取消全选</button>
+                  <span class="selected-count" id="trendMetricCount">已选 0 个</span>
+                </div>
+                <div class="multi-select-list" id="trendMetricList">
+                  <div class="multi-select-item" onclick="toggleTrendMetricItem(this,'total')"><input type="checkbox" checked tabindex="-1"><label>总分</label></div>
+                  <div class="multi-select-item" onclick="toggleTrendMetricItem(this,'A')"><input type="checkbox" tabindex="-1"><label>品质考核</label></div>
+                  <div class="multi-select-item" onclick="toggleTrendMetricItem(this,'B')"><input type="checkbox" tabindex="-1"><label>成本考核</label></div>
+                  <div class="multi-select-item" onclick="toggleTrendMetricItem(this,'C')"><input type="checkbox" tabindex="-1"><label>交货考核</label></div>
+                  <div class="multi-select-item" onclick="toggleTrendMetricItem(this,'D')"><input type="checkbox" tabindex="-1"><label>服务考核</label></div>
+                </div>
+              </div>
+            </div>
+            <label style="font-weight:600;font-size:13px;white-space:nowrap;margin-left:8px;">月份：</label>
+            <div class="multi-select-dropdown" id="trendMonthDropdown">
+              <div class="multi-select-trigger" id="trendMonthTrigger" onclick="toggleTrendMonthDropdown()">
+                <span id="trendMonthDisplay">全部月份</span>
+                <span class="arrow">▼</span>
+              </div>
+              <div class="multi-select-dropdown-panel" id="trendMonthPanel">
+                <div class="multi-select-actions">
+                  <button class="toggle-all-btn" onclick="toggleAllTrendMonths()">全选/取消全选</button>
+                  <span class="selected-count" id="trendMonthCount">已选 0 个</span>
+                </div>
+                <div class="multi-select-list" id="trendMonthList"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label style="font-weight:600;font-size:13px;white-space:nowrap;">供应商：</label>
+            <div class="multi-select-dropdown" id="trendSupplierDropdown">
+              <div class="multi-select-trigger" id="trendSupplierTrigger" onclick="toggleTrendDropdown()">
+                <span id="trendSupplierDisplay">全部供应商</span>
+                <span class="arrow">▼</span>
+              </div>
+              <div class="multi-select-dropdown-panel" id="trendSupplierPanel">
+                <div class="multi-select-search">
+                  <input type="text" id="trendSupplierSearch" placeholder="搜索供应商..." oninput="filterTrendDropdown()">
+                </div>
+                <div class="multi-select-actions">
+                  <button class="toggle-all-btn" id="trendToggleAllBtn" onclick="toggleAllTrendSuppliers()">全选/取消全选</button>
+                  <span class="selected-count" id="trendSelectedCount">已选 0 个</span>
+                </div>
+                <div class="multi-select-list" id="trendSupplierList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-container" id="trendChart"></div>
+    </div>
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title"><div class="icon"></div>等级分布变化</div>
+        <div class="chart-container" id="gradeChart"></div>
+        <div id="gradeCountTable" style="margin-top:16px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="icon"></div>各维度平均分对比</div>
+        <div class="chart-container" id="dimAvgChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel: Compare -->
+  <div class="panel" id="panel-compare">
+    <div class="card">
+      <div class="card-title"><div class="icon"></div>供应商维度对比分析</div>
+      <div class="filter-bar">
+        <label style="font-weight:600;font-size:13px;white-space:nowrap;">类别：</label>
+        <select id="compareCategory"><option value="all">全部类别</option></select>
+        <label style="font-weight:600;font-size:13px;white-space:nowrap;margin-left:8px;">供应商：</label>
+        <div class="multi-select-dropdown" id="compareSupplierDropdown">
+          <div class="multi-select-trigger" id="compareSupplierTrigger" onclick="toggleCompareDropdown()">
+            <span id="compareSupplierDisplay">全部供应商</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="multi-select-dropdown-panel" id="compareSupplierPanel">
+            <div class="multi-select-search">
+              <input type="text" id="compareSupplierSearch" placeholder="搜索供应商..." oninput="filterCompareDropdown()">
+            </div>
+            <div class="multi-select-actions">
+              <button class="toggle-all-btn" id="compareToggleAllBtn" onclick="toggleAllCompareSuppliers()">全选/取消全选</button>
+              <span class="selected-count" id="compareSelectedCount">已选 0 个</span>
+            </div>
+            <div class="multi-select-list" id="compareSupplierList"></div>
+          </div>
+        </div>
+        <label style="font-weight:600;font-size:13px;white-space:nowrap;margin-left:8px;">月份：</label>
+        <div id="compareMonths" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:28px;">
+        <div>
+          <div style="text-align:center;font-size:15px;font-weight:600;color:var(--gray-700);margin-bottom:8px;">雷达对比图</div>
+          <div id="radarChart" style="width:100%;height:560px;"></div>
+        </div>
+        <div>
+          <div style="text-align:center;font-size:15px;font-weight:600;color:var(--gray-700);margin-bottom:8px;">维度得分热力图</div>
+          <div id="heatmapChart" style="width:100%;height:500px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel: Rank -->
+  <div class="panel" id="panel-rank">
+    <div class="card">
+      <div class="card-title"><div class="icon"></div>排名变动与差异分析</div>
+      <div class="filter-bar">
+        <select id="rankMonth1"></select>
+        <span style="color:var(--gray-500)">→</span>
+        <select id="rankMonth2"></select>
+        <select id="rankGrade">
+          <option value="all">全部等级</option>
+          <option value="up">仅升分</option>
+          <option value="down">仅降分</option>
+        </select>
+        <input type="text" id="rankSearch" placeholder="搜索供应商...">
+        <div style="margin-left:auto" class="btn-group">
+          <button class="btn btn-outline" onclick="exportRankAnalysis()">📥 导出Excel</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="rankTable"></div>
+    </div>
+  </div>
+
+  <!-- Panel: Detail -->
+  <div class="panel" id="panel-detail">
+    <div class="card">
+      <div class="card-title"><div class="icon"></div>月度考核明细</div>
+      <div class="filter-bar">
+        <select id="detailMonth"></select>
+        <select id="detailGrade">
+          <option value="all">全部等级</option>
+          <option value="A">A级（优秀）</option>
+          <option value="B">B级（良好）</option>
+          <option value="C">C级（合格）</option>
+          <option value="D">D级（不合格）</option>
+        </select>
+        <input type="text" id="detailSearch" placeholder="搜索供应商...">
+        <div style="margin-left:auto" class="btn-group">
+          <button class="btn btn-outline" onclick="exportCurrentMonth()">📥 导出当月</button>
+          <button class="btn btn-outline" onclick="exportAllMonths()">📥 导出全部月份</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="detailTable"></div>
+    </div>
+  </div>
+</div>
+
+  <!-- Panel: Supplier Pool -->
+  <div class="panel" id="panel-pool">
+    <div class="card">
+      <div class="card-title"><div class="icon"></div>供应商池管理</div>
+      <div class="pool-stats">
+        <div class="pool-stat-item">
+          <span>供应商总数：</span>
+          <span class="pool-stat-value" id="poolTotalCount">0</span>
+        </div>
+      </div>
+      <div class="pool-actions">
+        <button class="btn btn-primary" onclick="openPoolModal()">➕ 新增供应商</button>
+        <button class="btn btn-outline" onclick="importPoolToAssessment()" title="将供应商池中的供应商批量添加为空白考核记录">📥 导入到考核数据</button>
+        <button class="btn btn-outline" onclick="exportSupplierPool()">📤 导出供应商池</button>
+        <button class="btn btn-outline" onclick="document.getElementById('poolImportInput').click()">📥 批量导入</button>
+        <input type="file" id="poolImportInput" accept=".xlsx,.xls" style="display:none" onchange="importSupplierPoolBatch(this)">
+      </div>
+      <div class="table-wrap" id="supplierPoolTable"></div>
+    </div>
+  </div>
+
+  <!-- Supplier Pool Modal -->
+  <div class="modal-overlay" id="poolModal">
+    <div class="modal-box">
+      <div class="modal-title" id="poolModalTitle">新增供应商</div>
+      <div class="modal-form-group">
+        <label>供应商名称</label>
+        <input type="text" id="poolSupplierName" placeholder="请输入供应商名称">
+      </div>
+      <div class="modal-form-group">
+        <label>类别</label>
+        <input type="text" id="poolSupplierCategory" placeholder="请输入类别（如：牙刷、标签、软管等）" list="poolCategoryList">
+        <datalist id="poolCategoryList"></datalist>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closePoolModal()">取消</button>
+        <button class="btn btn-primary" id="poolModalSaveBtn" onclick="savePoolSupplier()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel: Manual Scoring -->
+  <div class="panel" id="panel-scoring">
+    <div class="card">
+      <div class="card-title"><div class="icon"></div>供应商手动打分</div>
+      <div class="filter-bar" style="align-items:flex-end;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-weight:600;font-size:13px;">选择月份</label>
+          <select id="scoringMonth" onchange="loadScoringData()" style="padding:8px 12px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px;outline:none;min-width:140px;">
+            <option value="">-- 请选择月份 --</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-weight:600;font-size:13px;">新建月份</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="newScoringMonth" placeholder="如：6月" style="padding:8px 12px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px;outline:none;width:120px;">
+            <button class="btn btn-outline" onclick="createScoringMonth()">新建</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="document.getElementById('scoringImportInput').click()">📥 从Excel导入</button>
+          <input type="file" id="scoringImportInput" accept=".xlsx,.xls" style="display:none" onchange="importScoringFromExcel(this)">
+          <button class="btn btn-outline" onclick="exportScoringTemplate()">📤 导出打分模板</button>
+          <button class="btn btn-outline" onclick="resetScoringForm()">🔄 重置</button>
+          <button class="btn btn-primary" id="btnSaveScoring" onclick="saveScoringMonth(false)">💾 保存草稿</button>
+          <button class="btn btn-success" id="btnSubmitScoring" onclick="saveScoringMonth(true)">🚀 提交</button>
+        </div>
+      </div>
+      <div id="scoringStatusArea" style="margin-top:8px;"></div>
+      <div id="scoringTableContainer" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+<div class="loading-overlay hidden" id="loading"><div class="spinner"></div></div>
+<div class="notification" id="notification"></div>
+
+<script>
+// ========== Global State ==========
+const STATE = {
+  months: [],       // [{name: '3月', data: [{name, category, total, grade, A, B, C, D, ...}]}]
+  monthNames: [],   // ['3月', '4月', '5月']
+};
+
+// Meeting notes cache for rank table: key = `${supplierName}_${monthPair}`, value = text
+const meetingNotesCache = {};
+
+// Column mapping for parsing monthly Excel
+// Based on the data structure: row 5+ is data
+// Cols: 0=序号, 1=供应商名称, 2=类别, 3=总分, 4=等级
+// A细分: 5=a1, 6=a2, 7=a3, 8=a4, 9=A总分
+// B细分: 10=b1, 11=b2, 12=b3, 13=b4, 14=b5, 15=B总分
+// C细分: 16=c1, 17=c2, 18=c3, 19=C总分
+// D细分: 20=d1a, 21=d1b, 22=d2a, 23=d2b, 24=d2c, 25=d2d(可能存在), 26=D总分
+// 27=会议结论
+
+function parseMonthExcel(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      
+      // Find data start row (skip header rows 0-3)
+      let dataStart = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (row[1] && typeof row[1] === 'string' && row[1].includes('公司') || 
+            row[1] && typeof row[1] === 'string' && row[1].includes('有限') ||
+            row[1] && typeof row[1] === 'string' && row[1].includes('刷') ||
+            row[1] && typeof row[1] === 'string' && row[1].includes('实业') ||
+            row[1] && typeof row[1] === 'string' && row[1].includes('工艺') ||
+            row[1] && typeof row[1] === 'string' && row[1].includes('包装') ||
+            row[1] && typeof row[1] === 'string' && row[1].includes('展示') ||
+            (row[0] && !isNaN(parseInt(row[0])) && row[1])) {
+          dataStart = i;
+          break;
+        }
+      }
+      
+      const suppliers = [];
+      for (let i = dataStart; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row[1] || typeof row[1] !== 'string' || row[1].trim() === '') continue;
+        
+        const name = String(row[1]).trim();
+        if (name === '供应商名称') continue;
+        
+        const total = parseFloat(row[3]) || 0;
+        const grade = String(row[4] || '').trim();
+        
+        // Parse dimension totals - find the right column indices
+        // A总分=index9, B总分=index15, C总分=index19, D总分=index27(AB列)
+        let A = parseFloat(row[9]) || 0;
+        let B = parseFloat(row[15]) || 0;
+        let C = parseFloat(row[19]) || 0;
+        let D = parseFloat(row[27]) || 0;
+        
+        // Parse sub-scores
+        const a1 = parseFloat(row[5]) || 0;
+        const a2 = parseFloat(row[6]) || 0;
+        const a3 = parseFloat(row[7]) || 0;
+        const a4 = parseFloat(row[8]) || 0;
+        const b1 = parseFloat(row[10]) || 0;
+        const b2 = parseFloat(row[11]) || 0;
+        const b3 = parseFloat(row[12]) || 0;
+        const b4 = parseFloat(row[13]) || 0;
+        const b5 = parseFloat(row[14]) || 0;
+        const c1 = parseFloat(row[16]) || 0;
+        const c2 = parseFloat(row[17]) || 0;
+        const c3 = parseFloat(row[18]) || 0;
+        // D服务考核子项: d1包材(20-21), d1成品(22-23), d2业务支持(24-26)
+        const d1a = parseFloat(row[20]) || 0;
+        const d1b = parseFloat(row[21]) || 0;
+        const d2a = parseFloat(row[22]) || 0;
+        const d2b = parseFloat(row[23]) || 0;
+        const d2c = parseFloat(row[24]) || 0;
+        const d2d = parseFloat(row[25]) || 0;
+        const d2e = parseFloat(row[26]) || 0;
+        
+        // Meeting conclusion (column index 28 = AC列)
+        let conclusion = '';
+        let conclusionColIdx = -1;
+        for (let c = 28; c < row.length; c++) {
+          if (row[c] && String(row[c]).trim()) {
+            conclusion = String(row[c]).trim();
+            conclusionColIdx = c;
+            break;
+          }
+        }
+        
+        // Exception reason columns (AD-AI): 6 columns after conclusion
+        let exceptionQuality = '', exceptionCost = '', exceptionDelivery = '';
+        let exceptionServiceProduct = '', exceptionServicePackage = '', exceptionOther = '';
+        if (conclusionColIdx >= 0) {
+          exceptionQuality = String(row[conclusionColIdx + 1] || '').trim();
+          exceptionCost = String(row[conclusionColIdx + 2] || '').trim();
+          exceptionDelivery = String(row[conclusionColIdx + 3] || '').trim();
+          exceptionServiceProduct = String(row[conclusionColIdx + 4] || '').trim();
+          exceptionServicePackage = String(row[conclusionColIdx + 5] || '').trim();
+          exceptionOther = String(row[conclusionColIdx + 6] || '').trim();
+        }
+        
+        suppliers.push({
+          name, category: String(row[2] || '').trim(),
+          total, grade, A, B, C, D,
+          a1, a2, a3, a4, b1, b2, b3, b4, b5,
+          c1, c2, c3, d1a, d1b, d2a, d2b, d2c, d2d, d2e,
+          conclusion,
+          exceptionQuality, exceptionCost, exceptionDelivery,
+          exceptionServiceProduct, exceptionServicePackage, exceptionOther
+        });
+      }
+      
+      // Try to extract month name from filename
+      const fname = file.name || '';
+      let monthName = '';
+      const mMatch = fname.match(/(\d{1,2})月/);
+      if (mMatch) monthName = mMatch[1] + '月';
+      else monthName = '月份' + (STATE.months.length + 1);
+      
+      callback(null, { name: monthName, data: suppliers, fileName: fname });
+    } catch (err) {
+      callback(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function getGradeLetter(grade) {
+  if (!grade) return '';
+  if (grade.includes('A')) return 'A';
+  if (grade.includes('B')) return 'B';
+  if (grade.includes('C')) return 'C';
+  if (grade.includes('D')) return 'D';
+  return '';
+}
+
+function getGradeClass(grade) {
+  return 'grade-' + getGradeLetter(grade);
+}
+
+function getAllSuppliers() {
+  const set = new Set();
+  STATE.months.forEach(m => m.data.forEach(s => set.add(s.name)));
+  return [...set].sort();
+}
+
+function getSupplierData(name) {
+  // Return {monthName: dataObj} for each month this supplier appears in
+  const result = {};
+  STATE.months.forEach(m => {
+    const found = m.data.find(s => s.name === name);
+    if (found) result[m.name] = found;
+  });
+  return result;
+}
+
+function normalizeName(name) {
+  // Normalize supplier name for fuzzy matching
+  return name.replace(/[（）()]/g, '').replace(/\s+/g, '').trim();
+}
+
+function findSupplierAcrossMonths(name) {
+  // Find all data for a supplier across months, handling name variations
+  const norm = normalizeName(name);
+  const result = {};
+  STATE.months.forEach(m => {
+    for (const s of m.data) {
+      if (normalizeName(s.name) === norm || s.name === name) {
+        result[m.name] = s;
+        break;
+      }
+    }
+  });
+  return result;
+}
+
+function getCanonicalName(name) {
+  // Find the most complete name for a supplier
+  const norm = normalizeName(name);
+  let best = name;
+  STATE.months.forEach(m => {
+    for (const s of m.data) {
+      if (normalizeName(s.name) === norm && s.name.length > best.length) {
+        best = s.name;
+      }
+    }
+  });
+  return best;
+}
+
+// ========== UI Updates ==========
+function updateAll() {
+  updateHeader();
+  updateMonthsBar();
+  updateStats();
+  updateTrendChart();
+  updateGradeChart();
+  updateGradeCountTable();
+  updateDimAvgChart();
+  updateRadarChart();
+  updateHeatmapChart();
+  updateRankTable();
+  updateDetailTable();
+  populateSelects();
+}
+
+function updateHeader() {
+  const suppliers = getAllSuppliers().length;
+  document.getElementById('headerInfo').textContent = 
+    `已加载 ${STATE.months.length} 个月份数据 · ${suppliers} 家供应商 · ${STATE.monthNames.join('、') || '暂无数据'}`;
+}
+
+function updateMonthsBar() {
+  const bar = document.getElementById('monthsBar');
+  bar.innerHTML = STATE.months.map((m, i) => {
+    const lockIcon = m.locked ? ' 🔒' : ' 📝';
+    return `<span class="month-tag" draggable="true" data-idx="${i}">` +
+      `<span class="drag-handle">⠿</span>${m.name}（${m.data.length}家）${lockIcon}` +
+      `<span class="remove-btn" onclick="event.stopPropagation();removeMonth(${i})">×</span>` +
+    `</span>`;
+  }).join('');
+
+  // Bind drag events
+  const tags = bar.querySelectorAll('.month-tag');
+  let dragSrcIdx = null;
+
+  tags.forEach(tag => {
+    tag.addEventListener('dragstart', function(e) {
+      dragSrcIdx = parseInt(this.dataset.idx);
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragSrcIdx);
+    });
+
+    tag.addEventListener('dragend', function() {
+      this.classList.remove('dragging');
+      tags.forEach(t => t.classList.remove('drag-over-left', 'drag-over-right'));
+    });
+
+    tag.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const rect = this.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      tags.forEach(t => t.classList.remove('drag-over-left', 'drag-over-right'));
+      if (e.clientX < midX) {
+        this.classList.add('drag-over-left');
+      } else {
+        this.classList.add('drag-over-right');
+      }
+    });
+
+    tag.addEventListener('dragleave', function() {
+      this.classList.remove('drag-over-left', 'drag-over-right');
+    });
+
+    tag.addEventListener('drop', function(e) {
+      e.preventDefault();
+      const targetIdx = parseInt(this.dataset.idx);
+      if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+
+      // Determine insert position based on drop side
+      const rect = this.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      let insertBefore = e.clientX < midX;
+
+      // Move the item
+      const item = STATE.months.splice(dragSrcIdx, 1)[0];
+      // Recalculate target index after removal
+      let newIdx = targetIdx;
+      if (dragSrcIdx < targetIdx) newIdx--;
+      if (!insertBefore) newIdx++;
+      STATE.months.splice(newIdx, 0, item);
+
+      // Update monthNames to match new order
+      STATE.monthNames = STATE.months.map(m => m.name);
+
+      updateAll();
+    });
+  });
+}
+
+function updateStats() {
+  const grid = document.getElementById('statsGrid');
+  if (STATE.months.length === 0) {
+    grid.innerHTML = '';
+    return;
+  }
+  
+  // Update month selector options
+  const statsMonthSel = document.getElementById('statsMonth');
+  const currentSel = statsMonthSel.value;
+  statsMonthSel.innerHTML = STATE.months.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+  // Restore selection or default to latest
+  if (currentSel && STATE.monthNames.includes(currentSel)) {
+    statsMonthSel.value = currentSel;
+  } else {
+    statsMonthSel.selectedIndex = STATE.months.length - 1;
+  }
+  
+  const selectedMonthName = statsMonthSel.value;
+  const selectedIdx = STATE.monthNames.indexOf(selectedMonthName);
+  const selected = STATE.months[selectedIdx];
+  const prev = selectedIdx > 0 ? STATE.months[selectedIdx - 1] : null;
+  
+  const avgTotal = selected.data.reduce((s, d) => s + d.total, 0) / selected.data.length;
+  const prevAvg = prev ? prev.data.reduce((s, d) => s + d.total, 0) / prev.data.length : null;
+  const change = prevAvg !== null ? (avgTotal - prevAvg).toFixed(1) : null;
+  
+  const gradeA = selected.data.filter(d => getGradeLetter(d.grade) === 'A').length;
+  const gradeD = selected.data.filter(d => getGradeLetter(d.grade) === 'D').length;
+  
+  // Biggest improver and biggest decliner
+  let bestImprove = { name: '-', val: 0 };
+  let worstDecline = { name: '-', val: 0 };
+  if (prev) {
+    selected.data.forEach(s => {
+      const prevData = prev.data.find(p => normalizeName(p.name) === normalizeName(s.name));
+      if (prevData) {
+        const diff = s.total - prevData.total;
+        if (diff > bestImprove.val) bestImprove = { name: s.name.substring(0, 10), val: diff };
+        if (diff < worstDecline.val) worstDecline = { name: s.name.substring(0, 10), val: diff };
+      }
+    });
+  }
+  
+  const hasPrev = prev !== null;
+  
+  grid.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">${selected.name}平均总分</div>
+      <div class="stat-value">${avgTotal.toFixed(1)}</div>
+      ${hasPrev && change !== null ? `<div class="stat-change ${parseFloat(change) >= 0 ? 'up' : 'down'}">较${prev.name} ${parseFloat(change) >= 0 ? '↑' : '↓'} ${Math.abs(change)} 分</div>` : '<div class="stat-change" style="color:var(--gray-500)">首月数据，无对比</div>'}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">${selected.name}A级供应商</div>
+      <div class="stat-value" style="color:var(--success)">${gradeA}</div>
+      <div class="stat-change">占比 ${(gradeA/selected.data.length*100).toFixed(0)}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">${selected.name}D级供应商</div>
+      <div class="stat-value" style="color:var(--danger)">${gradeD}</div>
+      <div class="stat-change">${gradeD > 0 ? '需重点关注' : '无不合格'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">${hasPrev ? '最大进步' : '—'}</div>
+      <div class="stat-value" style="font-size:18px;color:var(--success)">${bestImprove.name}</div>
+      <div class="stat-change ${bestImprove.val > 0 ? 'up' : ''}">${hasPrev ? '↑ ' + bestImprove.val.toFixed(1) + ' 分' : '首月数据'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">${hasPrev ? '最大退步' : '—'}</div>
+      <div class="stat-value" style="font-size:18px;color:var(--danger)">${worstDecline.name}</div>
+      <div class="stat-change ${worstDecline.val < 0 ? 'down' : ''}">${hasPrev ? '↓ ' + Math.abs(worstDecline.val).toFixed(1) + ' 分' : '首月数据'}</div>
+    </div>
+  `;
+}
+
+function populateSelects() {
+  const suppliers = getAllSuppliers();
+  const monthNames = STATE.monthNames;
+  
+  // Trend category / metric / month multi-selects
+  updateTrendCategoryChecks();
+  updateTrendMetricChecks();
+  updateTrendMonthChecks();
+  
+  // Trend supplier checkboxes
+  updateTrendSupplierChecks();
+  
+  // Compare filters
+  updateCompareFilters();
+  
+  // Rank selects
+  ['rankMonth1', 'rankMonth2'].forEach((id, idx) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = monthNames.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.selectedIndex = idx === 0 ? Math.max(0, monthNames.length - 2) : monthNames.length - 1;
+  });
+  
+  // Detail month
+  const detailMonth = document.getElementById('detailMonth');
+  detailMonth.innerHTML = monthNames.map(m => `<option value="${m}">${m}</option>`).join('');
+  detailMonth.selectedIndex = monthNames.length - 1;
+}
+
+// ========== Trend Category / Metric / Month Multi-Select ==========
+let trendSelectedCats = new Set();
+let trendAllCatsList = [];
+let trendSelectedMetrics = new Set(['total']);
+const trendAllMetricsList = ['total','A','B','C','D'];
+const trendMetricLabels = {total:'总分',A:'品质考核',B:'成本考核',C:'交货考核',D:'服务考核'};
+let trendSelectedMonths = new Set();
+let trendAllMonthsList = [];
+
+// --- Trend Category Multi-Select ---
+function updateTrendCategoryChecks() {
+  const categories = new Set();
+  STATE.months.forEach(m => m.data.forEach(s => { if (s.category) categories.add(s.category); }));
+  trendAllCatsList = [...categories].sort();
+  if (trendSelectedCats.size === 0) {
+    trendSelectedCats = new Set(trendAllCatsList);
+  } else {
+    const newSet = new Set(trendAllCatsList);
+    const kept = new Set();
+    trendSelectedCats.forEach(c => { if (newSet.has(c)) kept.add(c); });
+    trendSelectedCats = kept.size > 0 ? kept : new Set(trendAllCatsList);
+  }
+  renderTrendCatList();
+  updateTrendCatDisplay();
+}
+
+function renderTrendCatList() {
+  const list = document.getElementById('trendCategoryList');
+  list.innerHTML = trendAllCatsList.map(c => {
+    const checked = trendSelectedCats.has(c) ? 'checked' : '';
+    return `<div class="multi-select-item" onclick="toggleTrendCatItem(this, '${c.replace(/'/g, "\\'")}')"><input type="checkbox" ${checked} tabindex="-1"><label title="${c}">${c}</label></div>`;
+  }).join('');
+  const countEl = document.getElementById('trendCatCount');
+  if (countEl) countEl.textContent = `已选 ${trendSelectedCats.size} / ${trendAllCatsList.length} 个`;
+}
+
+function updateTrendCatDisplay() {
+  const display = document.getElementById('trendCategoryDisplay');
+  if (trendSelectedCats.size === 0 || trendSelectedCats.size === trendAllCatsList.length) {
+    display.textContent = '全部类别';
+  } else if (trendSelectedCats.size === 1) {
+    display.textContent = Array.from(trendSelectedCats)[0];
+  } else {
+    display.textContent = `已选 ${trendSelectedCats.size} 个类别`;
+  }
+}
+
+function toggleTrendCatDropdown() {
+  const panel = document.getElementById('trendCategoryPanel');
+  const trigger = document.getElementById('trendCategoryTrigger');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) { panel.classList.remove('open'); trigger.classList.remove('open'); }
+  else { panel.classList.add('open'); trigger.classList.add('open'); }
+}
+function closeTrendCatDropdown() {
+  document.getElementById('trendCategoryPanel').classList.remove('open');
+  document.getElementById('trendCategoryTrigger').classList.remove('open');
+}
+function toggleTrendCatItem(el, cat) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  if (trendSelectedCats.has(cat)) { trendSelectedCats.delete(cat); cb.checked = false; }
+  else { trendSelectedCats.add(cat); cb.checked = true; }
+  updateTrendCatDisplay();
+  document.getElementById('trendCatCount').textContent = `已选 ${trendSelectedCats.size} / ${trendAllCatsList.length} 个`;
+  updateTrendSupplierChecks();
+  updateTrendChart();
+}
+function toggleAllTrendCats() {
+  if (trendSelectedCats.size === trendAllCatsList.length) trendSelectedCats.clear();
+  else trendSelectedCats = new Set(trendAllCatsList);
+  renderTrendCatList();
+  updateTrendCatDisplay();
+  updateTrendSupplierChecks();
+  updateTrendChart();
+}
+
+// --- Trend Metric Multi-Select ---
+function updateTrendMetricChecks() {
+  const list = document.getElementById('trendMetricList');
+  list.innerHTML = trendAllMetricsList.map(m => {
+    const checked = trendSelectedMetrics.has(m) ? 'checked' : '';
+    return `<div class="multi-select-item" onclick="toggleTrendMetricItem(this, '${m}')"><input type="checkbox" ${checked} tabindex="-1"><label>${trendMetricLabels[m]}</label></div>`;
+  }).join('');
+  updateTrendMetricDisplay();
+}
+
+function updateTrendMetricDisplay() {
+  const display = document.getElementById('trendMetricDisplay');
+  if (trendSelectedMetrics.size === 0 || trendSelectedMetrics.size === trendAllMetricsList.length) {
+    display.textContent = '全部指标';
+  } else if (trendSelectedMetrics.size === 1) {
+    display.textContent = trendMetricLabels[Array.from(trendSelectedMetrics)[0]];
+  } else {
+    display.textContent = `已选 ${trendSelectedMetrics.size} 个指标`;
+  }
+}
+
+function toggleTrendMetricDropdown() {
+  const panel = document.getElementById('trendMetricPanel');
+  const trigger = document.getElementById('trendMetricTrigger');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) { panel.classList.remove('open'); trigger.classList.remove('open'); }
+  else { panel.classList.add('open'); trigger.classList.add('open'); }
+}
+function closeTrendMetricDropdown() {
+  document.getElementById('trendMetricPanel').classList.remove('open');
+  document.getElementById('trendMetricTrigger').classList.remove('open');
+}
+function toggleTrendMetricItem(el, metric) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  if (trendSelectedMetrics.has(metric)) { trendSelectedMetrics.delete(metric); cb.checked = false; }
+  else { trendSelectedMetrics.add(metric); cb.checked = true; }
+  if (trendSelectedMetrics.size === 0) { trendSelectedMetrics.add(metric); cb.checked = true; }
+  updateTrendMetricDisplay();
+  document.getElementById('trendMetricCount').textContent = `已选 ${trendSelectedMetrics.size} / ${trendAllMetricsList.length} 个`;
+  updateTrendChart();
+}
+function toggleAllTrendMetrics() {
+  if (trendSelectedMetrics.size === trendAllMetricsList.length) trendSelectedMetrics = new Set(['total']);
+  else trendSelectedMetrics = new Set(trendAllMetricsList);
+  updateTrendMetricChecks();
+  updateTrendChart();
+}
+
+// --- Trend Month Multi-Select ---
+function updateTrendMonthChecks() {
+  trendAllMonthsList = [...STATE.monthNames];
+  if (trendSelectedMonths.size === 0) {
+    trendSelectedMonths = new Set(trendAllMonthsList);
+  } else {
+    const newSet = new Set(trendAllMonthsList);
+    const kept = new Set();
+    trendSelectedMonths.forEach(m => { if (newSet.has(m)) kept.add(m); });
+    trendSelectedMonths = kept.size > 0 ? kept : new Set(trendAllMonthsList);
+  }
+  renderTrendMonthList();
+  updateTrendMonthDisplay();
+}
+
+function renderTrendMonthList() {
+  const list = document.getElementById('trendMonthList');
+  list.innerHTML = trendAllMonthsList.map(m => {
+    const checked = trendSelectedMonths.has(m) ? 'checked' : '';
+    return `<div class="multi-select-item" onclick="toggleTrendMonthItem(this, '${m.replace(/'/g, "\\'")}')"><input type="checkbox" ${checked} tabindex="-1"><label>${m}</label></div>`;
+  }).join('');
+  const countEl = document.getElementById('trendMonthCount');
+  if (countEl) countEl.textContent = `已选 ${trendSelectedMonths.size} / ${trendAllMonthsList.length} 个`;
+}
+
+function updateTrendMonthDisplay() {
+  const display = document.getElementById('trendMonthDisplay');
+  if (trendSelectedMonths.size === 0 || trendSelectedMonths.size === trendAllMonthsList.length) {
+    display.textContent = '全部月份';
+  } else if (trendSelectedMonths.size <= 2) {
+    display.textContent = Array.from(trendSelectedMonths).join(', ');
+  } else {
+    display.textContent = `已选 ${trendSelectedMonths.size} 个月份`;
+  }
+}
+
+function toggleTrendMonthDropdown() {
+  const panel = document.getElementById('trendMonthPanel');
+  const trigger = document.getElementById('trendMonthTrigger');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) { panel.classList.remove('open'); trigger.classList.remove('open'); }
+  else { panel.classList.add('open'); trigger.classList.add('open'); }
+}
+function closeTrendMonthDropdown() {
+  document.getElementById('trendMonthPanel').classList.remove('open');
+  document.getElementById('trendMonthTrigger').classList.remove('open');
+}
+function toggleTrendMonthItem(el, month) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  if (trendSelectedMonths.has(month)) { trendSelectedMonths.delete(month); cb.checked = false; }
+  else { trendSelectedMonths.add(month); cb.checked = true; }
+  updateTrendMonthDisplay();
+  document.getElementById('trendMonthCount').textContent = `已选 ${trendSelectedMonths.size} / ${trendAllMonthsList.length} 个`;
+  updateTrendChart();
+}
+function toggleAllTrendMonths() {
+  if (trendSelectedMonths.size === trendAllMonthsList.length) trendSelectedMonths.clear();
+  else trendSelectedMonths = new Set(trendAllMonthsList);
+  renderTrendMonthList();
+  updateTrendMonthDisplay();
+  updateTrendChart();
+}
+
+// ========== Trend Supplier Multi-Select Dropdown ==========
+let trendSelectedSuppliers = new Set();
+let trendAllSuppliersList = [];
+
+function updateTrendSupplierChecks() {
+  // Build supplier list filtered by selected categories
+  const supplierMap = {};
+  STATE.months.forEach(m => {
+    m.data.forEach(s => {
+      if (trendSelectedCats.size === 0 || trendSelectedCats.has(s.category)) {
+        const norm = normalizeName(s.name);
+        if (!supplierMap[norm]) supplierMap[norm] = getCanonicalName(s.name);
+      }
+    });
+  });
+  trendAllSuppliersList = Object.values(supplierMap).sort();
+  
+  // If no previous selection or selection is empty, select all
+  if (trendSelectedSuppliers.size === 0) {
+    trendSelectedSuppliers = new Set(trendAllSuppliersList);
+  } else {
+    // Remove suppliers that no longer exist in the filtered list
+    const newListSet = new Set(trendAllSuppliersList);
+    const newSelected = new Set();
+    trendSelectedSuppliers.forEach(s => {
+      if (newListSet.has(s)) newSelected.add(s);
+    });
+    trendSelectedSuppliers = newSelected;
+    // If nothing left, select all
+    if (trendSelectedSuppliers.size === 0) {
+      trendSelectedSuppliers = new Set(trendAllSuppliersList);
+    }
+  }
+  
+  renderTrendDropdownList();
+  updateTrendDropdownDisplay();
+}
+
+function renderTrendDropdownList() {
+  const list = document.getElementById('trendSupplierList');
+  const searchVal = (document.getElementById('trendSupplierSearch').value || '').toLowerCase();
+  const filtered = trendAllSuppliersList.filter(s => s.toLowerCase().includes(searchVal));
+  
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="multi-select-empty">无匹配供应商</div>';
+  } else {
+    list.innerHTML = filtered.map(s => {
+      const checked = trendSelectedSuppliers.has(s) ? 'checked' : '';
+      const shortName = s.length > 20 ? s.substring(0, 20) + '…' : s;
+      return `<div class="multi-select-item" onclick="toggleTrendSupplierItem(this, '${s.replace(/'/g, "\\'")}')">
+        <input type="checkbox" ${checked} tabindex="-1">
+        <label title="${s}">${shortName}</label>
+      </div>`;
+    }).join('');
+  }
+  
+  // Update count
+  const countEl = document.getElementById('trendSelectedCount');
+  if (countEl) countEl.textContent = `已选 ${trendSelectedSuppliers.size} / ${trendAllSuppliersList.length} 个`;
+}
+
+function updateTrendDropdownDisplay() {
+  const display = document.getElementById('trendSupplierDisplay');
+  if (trendSelectedSuppliers.size === trendAllSuppliersList.length || trendSelectedSuppliers.size === 0) {
+    display.textContent = '全部供应商';
+  } else if (trendSelectedSuppliers.size <= 2) {
+    const names = Array.from(trendSelectedSuppliers).map(s => s.length > 8 ? s.substring(0, 8) + '…' : s);
+    display.textContent = names.join(', ');
+  } else {
+    display.textContent = `已选 ${trendSelectedSuppliers.size} 个供应商`;
+  }
+}
+
+function toggleTrendDropdown() {
+  const trigger = document.getElementById('trendSupplierTrigger');
+  const panel = document.getElementById('trendSupplierPanel');
+  const isOpen = panel.classList.contains('open');
+  if (isOpen) {
+    panel.classList.remove('open');
+    trigger.classList.remove('open');
+  } else {
+    panel.classList.add('open');
+    trigger.classList.add('open');
+    document.getElementById('trendSupplierSearch').value = '';
+    renderTrendDropdownList();
+    document.getElementById('trendSupplierSearch').focus();
+  }
+}
+
+function closeTrendDropdown() {
+  const trigger = document.getElementById('trendSupplierTrigger');
+  const panel = document.getElementById('trendSupplierPanel');
+  panel.classList.remove('open');
+  trigger.classList.remove('open');
+}
+
+function filterTrendDropdown() {
+  renderTrendDropdownList();
+}
+
+function toggleTrendSupplierItem(itemEl, supplierName) {
+  const cb = itemEl.querySelector('input[type="checkbox"]');
+  if (trendSelectedSuppliers.has(supplierName)) {
+    trendSelectedSuppliers.delete(supplierName);
+    cb.checked = false;
+  } else {
+    trendSelectedSuppliers.add(supplierName);
+    cb.checked = true;
+  }
+  updateTrendDropdownDisplay();
+  const countEl = document.getElementById('trendSelectedCount');
+  if (countEl) countEl.textContent = `已选 ${trendSelectedSuppliers.size} / ${trendAllSuppliersList.length} 个`;
+  closeTrendDropdown();
+  updateTrendChart();
+}
+
+function toggleAllTrendSuppliers() {
+  if (trendSelectedSuppliers.size === trendAllSuppliersList.length) {
+    trendSelectedSuppliers.clear();
+  } else {
+    trendSelectedSuppliers = new Set(trendAllSuppliersList);
+  }
+  renderTrendDropdownList();
+  updateTrendDropdownDisplay();
+  updateTrendChart();
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  const trendDropdown = document.getElementById('trendSupplierDropdown');
+  if (trendDropdown && !trendDropdown.contains(e.target)) closeTrendDropdown();
+  const compareDropdown = document.getElementById('compareSupplierDropdown');
+  if (compareDropdown && !compareDropdown.contains(e.target)) closeCompareDropdown();
+  const trendCatDd = document.getElementById('trendCategoryDropdown');
+  if (trendCatDd && !trendCatDd.contains(e.target)) closeTrendCatDropdown();
+  const trendMetricDd = document.getElementById('trendMetricDropdown');
+  if (trendMetricDd && !trendMetricDd.contains(e.target)) closeTrendMetricDropdown();
+  const trendMonthDd = document.getElementById('trendMonthDropdown');
+  if (trendMonthDd && !trendMonthDd.contains(e.target)) closeTrendMonthDropdown();
+});
+
+function getTrendSelectedSuppliers() {
+  return Array.from(trendSelectedSuppliers);
+}
+
+// ========== Charts ==========
+let trendChartInstance, gradeChartInstance, dimAvgChartInstance, radarChartInstance, heatmapChartInstance;
+
+function getOrCreateChart(id) {
+  const el = document.getElementById(id);
+  let instance = echarts.getInstanceByDom(el);
+  if (instance) return instance;
+  return echarts.init(el);
+}
+
+function updateTrendChart() {
+  if (STATE.months.length === 0) return;
+  const chart = getOrCreateChart('trendChart');
+  const selectedMetrics = Array.from(trendSelectedMetrics);
+  const selectedSuppliers = getTrendSelectedSuppliers();
+  
+  // Filter months by selected months
+  const filteredMonths = STATE.months.filter(m => trendSelectedMonths.size === 0 || trendSelectedMonths.has(m.name));
+  const xData = filteredMonths.map(m => m.name);
+  let series = [];
+  
+  const colors = ['#4f6ef7','#f59e0b','#22c55e','#ef4444','#7c3aed','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#6366f1','#d946ef','#0ea5e9','#e11d48','#8b5cf6','#10b981'];
+  
+  if (selectedMetrics.length <= 1) {
+    // Single metric mode: show supplier lines (existing behavior)
+    const metric = selectedMetrics[0] || 'total';
+    
+    const avgData = filteredMonths.map(m => {
+      const vals = m.data.map(s => metric === 'total' ? s.total : s[metric]);
+      return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+    });
+    
+    if (selectedSuppliers.length === 0) {
+      series.push({
+        name: '全员平均',
+        type: 'line',
+        data: avgData,
+        smooth: true,
+        lineStyle: { width: 3 },
+        itemStyle: { color: '#4f6ef7' },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(79,110,247,.2)' },
+          { offset: 1, color: 'rgba(79,110,247,0)' }
+        ])}
+      });
+    } else if (selectedSuppliers.length <= 3) {
+      selectedSuppliers.forEach((sup, si) => {
+        const dataMap = findSupplierAcrossMonths(sup);
+        const data = filteredMonths.map(m => {
+          const d = dataMap[m.name];
+          if (!d) return null;
+          return metric === 'total' ? d.total : d[metric];
+        });
+        const canonicalName = getCanonicalName(sup);
+        const shortName = canonicalName.length > 10 ? canonicalName.substring(0, 10) + '…' : canonicalName;
+        const c = colors[si % colors.length];
+        series.push({
+          name: shortName,
+          type: 'line',
+          data: data,
+          smooth: true,
+          lineStyle: { width: 3 },
+          itemStyle: { color: c },
+          areaStyle: selectedSuppliers.length === 1 ? { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: c.replace(')', ',.2)').replace('rgb', 'rgba') },
+            { offset: 1, color: c.replace(')', ',0)').replace('rgb', 'rgba') }
+          ])} : undefined
+        });
+      });
+      series.push({
+        name: '全员平均',
+        type: 'line',
+        data: avgData,
+        lineStyle: { width: 1, type: 'dashed' },
+        itemStyle: { color: '#9ca3af' },
+        symbol: 'none'
+      });
+    } else {
+      selectedSuppliers.forEach((sup, si) => {
+        const dataMap = findSupplierAcrossMonths(sup);
+        const data = filteredMonths.map(m => {
+          const d = dataMap[m.name];
+          if (!d) return null;
+          return metric === 'total' ? d.total : d[metric];
+        });
+        const canonicalName = getCanonicalName(sup);
+        const shortName = canonicalName.length > 8 ? canonicalName.substring(0, 8) + '…' : canonicalName;
+        series.push({
+          name: shortName,
+          type: 'line',
+          data: data,
+          smooth: true,
+          lineStyle: { width: 2 },
+          itemStyle: { color: colors[si % colors.length] },
+          symbolSize: 5
+        });
+      });
+    }
+    
+    const maxVal = metric === 'total' ? 100 : metric === 'A' ? 25 : metric === 'B' ? 20 : metric === 'C' ? 20 : 35;
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0, type: 'scroll' },
+      grid: { top: 20, right: 20, bottom: 60, left: 50 },
+      xAxis: { type: 'category', data: xData, axisLine: { lineStyle: { color: '#e5e7eb' } } },
+      yAxis: { type: 'value', min: Math.max(0, maxVal - 30), max: maxVal, axisLine: { show: false }, splitLine: { lineStyle: { color: '#f3f4f6' } } },
+      series
+    }, true);
+  } else {
+    // Multi-metric mode: show average line per metric
+    const metricColors = {total:'#4f6ef7', A:'#f59e0b', B:'#22c55e', C:'#ef4444', D:'#7c3aed'};
+    let maxVal = 0;
+    
+    selectedMetrics.forEach(metric => {
+      const avgData = filteredMonths.map(m => {
+        const vals = m.data.map(s => metric === 'total' ? s.total : s[metric]);
+        return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null;
+      });
+      maxVal = Math.max(maxVal, metric === 'total' ? 100 : metric === 'A' ? 25 : metric === 'B' ? 20 : metric === 'C' ? 20 : 35);
+      series.push({
+        name: trendMetricLabels[metric],
+        type: 'line',
+        data: avgData,
+        smooth: true,
+        lineStyle: { width: 3 },
+        itemStyle: { color: metricColors[metric] || '#999' }
+      });
+    });
+    
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0, type: 'scroll' },
+      grid: { top: 20, right: 20, bottom: 60, left: 50 },
+      xAxis: { type: 'category', data: xData, axisLine: { lineStyle: { color: '#e5e7eb' } } },
+      yAxis: { type: 'value', min: 0, max: maxVal, axisLine: { show: false }, splitLine: { lineStyle: { color: '#f3f4f6' } } },
+      series
+    }, true);
+  }
+}
+
+// 共享计算函数：等级分布数据（图表和表格共用，确保一致）
+function computeGradeDistribution() {
+  const grades = ['A', 'B', 'C', 'D'];
+  const monthNames = STATE.monthNames;
+  const counts = {}; // { monthName: { A: n, B: n, C: n, D: n, total: n } }
+  
+  STATE.months.forEach(m => {
+    const total = m.data.length;
+    const mc = { total };
+    grades.forEach(g => {
+      mc[g] = m.data.filter(s => getGradeLetter(s.grade) === g).length;
+    });
+    counts[m.name] = mc;
+  });
+  
+  return { grades, monthNames, counts };
+}
+
+function updateGradeChart() {
+  if (STATE.months.length === 0) return;
+  const chart = getOrCreateChart('gradeChart');
+  
+  const { grades, monthNames, counts } = computeGradeDistribution();
+  const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'];
+  const lastIdx = grades.length - 1;
+  
+  const series = grades.map((g, gi) => ({
+    name: g + '级',
+    type: 'bar',
+    stack: 'total',
+    data: monthNames.map(mn => counts[mn][g]),
+    itemStyle: { 
+      color: colors[gi], 
+      borderRadius: gi === lastIdx ? [4, 4, 0, 0] : 0 
+    },
+    label: { show: false },
+    barWidth: 48
+  }));
+  
+  chart.setOption({
+    tooltip: { 
+      trigger: 'axis',
+      formatter: function(params) {
+        const mn = params[0].axisValue;
+        const total = counts[mn].total;
+        let html = '<b>' + mn + '</b>（共' + total + '家）<br/>';
+        grades.forEach((g, gi) => {
+          const c = counts[mn][g];
+          const pct = total > 0 ? (c / total * 100).toFixed(1) : '0.0';
+          html += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + colors[gi] + ';margin-right:4px;"></span>';
+          html += g + '级: <b>' + c + '</b>家 (' + pct + '%)<br/>';
+        });
+        return html;
+      }
+    },
+    legend: { bottom: 0 },
+    grid: { top: 20, right: 20, bottom: 50, left: 50 },
+    xAxis: { type: 'category', data: monthNames },
+    yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#f3f4f6' } } },
+    series
+  }, true);
+}
+
+function updateGradeCountTable() {
+  const container = document.getElementById('gradeCountTable');
+  if (STATE.months.length === 0) { container.innerHTML = ''; return; }
+
+  // 使用共享计算函数，确保与图表数据完全一致
+  const { grades, monthNames, counts } = computeGradeDistribution();
+  const gradeColors = { A: '#22c55e', B: '#3b82f6', C: '#f59e0b', D: '#ef4444' };
+  const gradeBgColors = { A: '#dcfce7', B: '#dbeafe', C: '#fef3c7', D: '#fee2e2' };
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr>';
+  html += '<th style="padding:8px 12px;text-align:left;background:#f3f4f6;border-bottom:2px solid #e5e7eb;">月份</th>';
+  html += '<th style="padding:8px 12px;text-align:center;background:#f3f4f6;border-bottom:2px solid #e5e7eb;">总数</th>';
+  grades.forEach(g => {
+    html += `<th style="padding:8px 12px;text-align:center;background:#f3f4f6;border-bottom:2px solid #e5e7eb;">${g}级</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  // 按当前月份顺序显示（与图表x轴一致）
+  monthNames.forEach(mn => {
+    const mc = counts[mn];
+    const total = mc.total;
+
+    html += `<tr style="border-bottom:1px solid #f3f4f6;">`;
+    html += `<td style="padding:8px 12px;font-weight:600;">${mn}</td>`;
+    html += `<td style="padding:8px 12px;text-align:center;font-weight:700;">${total}</td>`;
+    grades.forEach(g => {
+      const c = mc[g];
+      const pct = total > 0 ? (c / total * 100).toFixed(1) : '0.0';
+      html += `<td style="padding:8px 12px;text-align:center;">`;
+      html += `<span style="display:inline-block;min-width:28px;padding:2px 8px;border-radius:10px;font-weight:600;background:${gradeBgColors[g]};color:${gradeColors[g]};">${c}</span>`;
+      html += `<span style="margin-left:4px;color:#6b7280;font-size:11px;">${pct}%</span>`;
+      html += `</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  // 合计行：跨所有月份的去重统计
+  html += `<tr style="border-top:2px solid #e5e7eb;font-weight:600;background:#f9fafb;">`;
+  const allTotal = STATE.months.reduce((s, m) => s + m.data.length, 0);
+  html += `<td style="padding:8px 12px;">合计</td>`;
+  html += `<td style="padding:8px 12px;text-align:center;font-weight:700;">${allTotal}</td>`;
+  grades.forEach(g => {
+    const count = monthNames.reduce((s, mn) => s + counts[mn][g], 0);
+    const pct = allTotal > 0 ? (count / allTotal * 100).toFixed(1) : '0.0';
+    html += `<td style="padding:8px 12px;text-align:center;">`;
+    html += `<span style="display:inline-block;min-width:28px;padding:2px 8px;border-radius:10px;font-weight:600;background:${gradeBgColors[g]};color:${gradeColors[g]};">${count}</span>`;
+    html += `<span style="margin-left:4px;color:#6b7280;font-size:11px;">${pct}%</span>`;
+    html += `</td>`;
+  });
+  html += `</tr>`;
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function updateDimAvgChart() {
+  if (STATE.months.length === 0) return;
+  const chart = getOrCreateChart('dimAvgChart');
+  
+  const dims = [
+    { key: 'A', name: '品质(25)', max: 25 },
+    { key: 'B', name: '成本(20)', max: 20 },
+    { key: 'C', name: '交货(20)', max: 20 },
+    { key: 'D', name: '服务(35)', max: 35 }
+  ];
+  
+  const colors = ['#4f6ef7', '#7c3aed', '#06b6d4', '#f59e0b', '#ef4444', '#22c55e'];
+  
+  const series = STATE.months.map((m, mi) => ({
+    name: m.name,
+    type: 'bar',
+    data: dims.map(d => {
+      const vals = m.data.map(s => s[d.key]);
+      return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+    }),
+    itemStyle: { color: colors[mi % colors.length], borderRadius: [4, 4, 0, 0] },
+    barGap: '10%'
+  }));
+  
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    grid: { top: 20, right: 20, bottom: 50, left: 40 },
+    xAxis: { type: 'category', data: dims.map(d => d.name) },
+    yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#f3f4f6' } } },
+    series
+  }, true);
+}
+
+function updateCompareFilters() {
+  if (STATE.months.length === 0) return;
+  
+  // Populate category filter
+  const categories = new Set();
+  STATE.months.forEach(m => m.data.forEach(s => { if (s.category) categories.add(s.category); }));
+  const catSel = document.getElementById('compareCategory');
+  const curCat = catSel.value;
+  catSel.innerHTML = '<option value="all">全部类别</option>' + [...categories].sort().map(c => `<option value="${c}">${c}</option>`).join('');
+  if (curCat && [...categories].includes(curCat)) catSel.value = curCat;
+  
+  // Populate month checkboxes
+  const monthsDiv = document.getElementById('compareMonths');
+  const checkedMonths = new Set(Array.from(monthsDiv.querySelectorAll('input:checked')).map(cb => cb.value));
+  monthsDiv.innerHTML = STATE.monthNames.map(m => 
+    `<label style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:${checkedMonths.has(m) ? 'var(--primary-light)' : 'var(--gray-100)'};border-radius:6px;font-size:13px;cursor:pointer;border:1px solid ${checkedMonths.has(m) ? 'var(--primary)' : 'transparent'}">
+      <input type="checkbox" value="${m}" ${checkedMonths.has(m) ? 'checked' : ''} onchange="onCompareMonthsChange()" style="accent-color:var(--primary)">${m}
+    </label>`
+  ).join('');
+  // If nothing checked, select last two
+  if (checkedMonths.size === 0 && STATE.monthNames.length >= 2) {
+    const cbs = monthsDiv.querySelectorAll('input');
+    cbs[cbs.length - 1].checked = true;
+    cbs[cbs.length - 2].checked = true;
+  } else if (checkedMonths.size === 0 && STATE.monthNames.length === 1) {
+    monthsDiv.querySelector('input').checked = true;
+  }
+  
+  // Populate supplier list based on category
+  updateCompareSuppliers();
+}
+
+// Compare supplier dropdown state
+let compareSelectedSuppliers = new Set();
+let compareAllSuppliersList = [];
+
+function updateCompareSuppliers() {
+  const catFilter = document.getElementById('compareCategory').value;
+  
+  // Get suppliers filtered by category
+  const supplierMap = {};
+  STATE.months.forEach(m => {
+    m.data.forEach(s => {
+      if (catFilter === 'all' || s.category === catFilter) {
+        const norm = normalizeName(s.name);
+        if (!supplierMap[norm]) supplierMap[norm] = getCanonicalName(s.name);
+      }
+    });
+  });
+  
+  const suppliers = Object.values(supplierMap).sort();
+  compareAllSuppliersList = suppliers;
+  
+  // Remove selected suppliers not in the current list
+  const supplierSet = new Set(suppliers);
+  for (const name of compareSelectedSuppliers) {
+    if (!supplierSet.has(name)) compareSelectedSuppliers.delete(name);
+  }
+  
+  // If no selection and we have suppliers, select all
+  if (compareSelectedSuppliers.size === 0 && suppliers.length > 0) {
+    suppliers.forEach(s => compareSelectedSuppliers.add(s));
+  }
+  
+  renderCompareDropdownList();
+  updateCompareDropdownDisplay();
+}
+
+function renderCompareDropdownList() {
+  const listEl = document.getElementById('compareSupplierList');
+  if (!compareAllSuppliersList.length) {
+    listEl.innerHTML = '<div style="padding:10px;color:#999;font-size:13px;text-align:center;">暂无数据</div>';
+    document.getElementById('compareSelectedCount').textContent = '已选 0 个';
+    document.getElementById('compareToggleAllBtn').textContent = '全选';
+    return;
+  }
+  const keyword = (document.getElementById('compareSupplierSearch')?.value || '').trim().toLowerCase();
+  const filtered = !keyword ? compareAllSuppliersList : compareAllSuppliersList.filter(n => n.toLowerCase().includes(keyword));
+  
+  if (!filtered.length) {
+    listEl.innerHTML = '<div style="padding:10px;color:#999;font-size:13px;text-align:center;">无匹配结果</div>';
+    return;
+  }
+  
+  listEl.innerHTML = filtered.map(s => {
+    const checked = compareSelectedSuppliers.has(s);
+    return `<div class="multi-select-item${checked ? ' selected' : ''}" data-value="${s}" onclick="toggleCompareSupplierItem(this, '${s.replace(/'/g, "\\'")}')">
+      <input type="checkbox" class="multi-select-checkbox" ${checked ? 'checked' : ''}>
+      <span class="multi-select-item-text">${s}</span>
+    </div>`;
+  }).join('');
+  
+  // Update count and toggle button
+  document.getElementById('compareSelectedCount').textContent = `已选 ${compareSelectedSuppliers.size} 个`;
+  document.getElementById('compareToggleAllBtn').textContent = compareSelectedSuppliers.size === compareAllSuppliersList.length ? '取消全选' : '全选';
+}
+
+function updateCompareDropdownDisplay() {
+  const display = document.getElementById('compareSupplierDisplay');
+  if (compareSelectedSuppliers.size === 0) {
+    display.textContent = '全部供应商';
+  } else if (compareSelectedSuppliers.size === 1) {
+    display.textContent = Array.from(compareSelectedSuppliers)[0];
+  } else if (compareSelectedSuppliers.size === compareAllSuppliersList.length) {
+    display.textContent = '全部供应商';
+  } else {
+    display.textContent = `已选 ${compareSelectedSuppliers.size} 个`;
+  }
+}
+
+function toggleCompareDropdown() {
+  const panel = document.getElementById('compareSupplierPanel');
+  const trigger = document.getElementById('compareSupplierTrigger');
+  const isOpen = panel.style.display === 'block';
+  if (isOpen) {
+    panel.style.display = 'none';
+    trigger.classList.remove('active');
+  } else {
+    panel.style.display = 'block';
+    trigger.classList.add('active');
+  }
+}
+
+function closeCompareDropdown() {
+  const panel = document.getElementById('compareSupplierPanel');
+  const trigger = document.getElementById('compareSupplierTrigger');
+  if (panel) panel.style.display = 'none';
+  if (trigger) trigger.classList.remove('active');
+}
+
+function filterCompareDropdown() {
+  renderCompareDropdownList();
+}
+
+function toggleCompareSupplierItem(itemEl, supplierName) {
+  itemEl.classList.toggle('selected');
+  const checkbox = itemEl.querySelector('.multi-select-checkbox');
+  if (itemEl.classList.contains('selected')) {
+    compareSelectedSuppliers.add(supplierName);
+    checkbox.checked = true;
+  } else {
+    compareSelectedSuppliers.delete(supplierName);
+    checkbox.checked = false;
+  }
+  updateCompareDropdownDisplay();
+  document.getElementById('compareSelectedCount').textContent = `已选 ${compareSelectedSuppliers.size} 个`;
+  document.getElementById('compareToggleAllBtn').textContent = compareSelectedSuppliers.size === compareAllSuppliersList.length ? '取消全选' : '全选';
+  updateRadarChart();
+  updateHeatmapChart();
+}
+
+function toggleAllCompareSuppliers() {
+  const allSelected = compareSelectedSuppliers.size === compareAllSuppliersList.length;
+  if (allSelected) {
+    compareSelectedSuppliers.clear();
+  } else {
+    compareAllSuppliersList.forEach(s => compareSelectedSuppliers.add(s));
+  }
+  renderCompareDropdownList();
+  updateCompareDropdownDisplay();
+  updateRadarChart();
+  updateHeatmapChart();
+}
+
+function onCompareMonthsChange() {
+  // Update checkbox label styling
+  const monthsDiv = document.getElementById('compareMonths');
+  monthsDiv.querySelectorAll('label').forEach(lbl => {
+    const cb = lbl.querySelector('input');
+    lbl.style.background = cb.checked ? 'var(--primary-light)' : 'var(--gray-100)';
+    lbl.style.borderColor = cb.checked ? 'var(--primary)' : 'transparent';
+  });
+  updateRadarChart();
+  updateHeatmapChart();
+}
+
+function getSelectedMonths() {
+  const monthsDiv = document.getElementById('compareMonths');
+  return Array.from(monthsDiv.querySelectorAll('input:checked')).map(cb => cb.value);
+}
+
+function getSelectedSuppliers() {
+  return Array.from(compareSelectedSuppliers);
+}
+
+function updateRadarChart() {
+  if (STATE.months.length === 0) return;
+  const chart = getOrCreateChart('radarChart');
+  
+  const selectedMonths = getSelectedMonths();
+  const selectedSuppliers = getSelectedSuppliers();
+  
+  if (selectedMonths.length === 0 || selectedSuppliers.length === 0) {
+    chart.clear();
+    return;
+  }
+  
+  // Dynamically adjust radar chart height based on legend count
+  const chartEl = document.getElementById('radarChart');
+  const legendCount = Math.max(selectedSuppliers.length, selectedMonths.length);
+  const dynamicHeight = Math.max(420, Math.min(650, 400 + legendCount * 20));
+  chartEl.style.height = dynamicHeight + 'px';
+  
+  const maxes = [
+    { name: '品质(25)', max: 25 },
+    { name: '成本(20)', max: 20 },
+    { name: '交货(20)', max: 20 },
+    { name: '服务(35)', max: 35 }
+  ];
+  
+  const colors = ['#4f6ef7','#f59e0b','#22c55e','#ef4444','#7c3aed','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
+  
+  const series = [];
+  const legendData = [];
+  
+  if (selectedSuppliers.length === 1) {
+    // Single supplier, show multiple months
+    const sup = selectedSuppliers[0];
+    const dataMap = findSupplierAcrossMonths(sup);
+    selectedMonths.forEach((mName, mi) => {
+      const d = dataMap[mName];
+      if (d) {
+        const c = colors[mi % colors.length];
+        legendData.push(mName);
+        series.push({
+          name: mName,
+          type: 'radar',
+          data: [{
+            name: mName,
+            value: [d.A, d.B, d.C, d.D],
+            lineStyle: { color: c, width: 2 },
+            areaStyle: { color: c, opacity: 0.15 },
+            itemStyle: { color: c }
+          }]
+        });
+      }
+    });
+  } else {
+    // Multiple suppliers, use latest selected month
+    const latestMonth = selectedMonths[selectedMonths.length - 1];
+    selectedSuppliers.forEach((sup, si) => {
+      const dataMap = findSupplierAcrossMonths(sup);
+      const d = dataMap[latestMonth];
+      if (d) {
+        const c = colors[si % colors.length];
+        const shortName = sup.length > 8 ? sup.substring(0, 8) + '...' : sup;
+        legendData.push(shortName);
+        series.push({
+          name: shortName,
+          type: 'radar',
+          data: [{
+            name: shortName,
+            value: [d.A, d.B, d.C, d.D],
+            lineStyle: { color: c, width: 2 },
+            areaStyle: { opacity: 0.1 },
+            itemStyle: { color: c }
+          }]
+        });
+      }
+    });
+  }
+  
+  chart.setOption({
+    tooltip: { trigger: 'item', confine: true },
+    legend: { 
+      data: legendData, 
+      bottom: 0, 
+      type: 'scroll', 
+      textStyle: { fontSize: 13 },
+      itemGap: 16,
+      padding: [0, 0, 0, 0]
+    },
+    radar: {
+      indicator: maxes,
+      center: ['50%', '50%'],
+      radius: '72%',
+      startAngle: 90,
+      splitNumber: 5,
+      shape: 'polygon',
+      splitArea: { 
+        show: true,
+        areaStyle: { color: ['rgba(255,255,255,0.9)','rgba(243,244,246,0.5)','rgba(229,231,235,0.3)','rgba(209,213,219,0.2)'] } 
+      },
+      axisName: { 
+        show: true,
+        fontSize: 16, 
+        fontWeight: 'bold', 
+        color: '#374151',
+        padding: [5, 8]
+      },
+      splitLine: { show: true, lineStyle: { width: 1, color: '#e5e7eb' } },
+      axisLine: { show: true, lineStyle: { color: '#d1d5db' } }
+    },
+    series: [{ 
+      type: 'radar', 
+      symbolSize: 6,
+      data: series.flatMap(s => s.data.map(d => ({...d, name: s.name}))) 
+    }]
+  }, true);
+  
+  // Resize after dynamic height change
+  setTimeout(() => chart.resize(), 50);
+}
+
+function updateHeatmapChart() {
+  if (STATE.months.length === 0) return;
+  const chart = getOrCreateChart('heatmapChart');
+  
+  const selectedMonths = getSelectedMonths();
+  const selectedSuppliers = getSelectedSuppliers();
+  
+  if (selectedMonths.length === 0 || selectedSuppliers.length === 0) {
+    chart.clear();
+    return;
+  }
+  
+  const dims = ['品质', '成本', '交货', '服务'];
+  const xData = [];
+  selectedSuppliers.forEach(s => dims.forEach(d => xData.push(s + '\n' + d)));
+  
+  // Build y-axis: months
+  const yData = selectedMonths;
+  
+  const data = [];
+  selectedSuppliers.forEach((sup, si) => {
+    const dataMap = findSupplierAcrossMonths(sup);
+    selectedMonths.forEach((mName, mi) => {
+      const d = dataMap[mName];
+      if (d) {
+        dims.forEach((dim, di) => {
+          const key = di === 0 ? 'A' : di === 1 ? 'B' : di === 2 ? 'C' : 'D';
+          const maxVal = key === 'A' ? 25 : key === 'B' ? 20 : key === 'C' ? 20 : 35;
+          const scoreRate = (d[key] / maxVal * 100).toFixed(1);
+          const xIdx = si * 4 + di;
+          data.push([xIdx, mi, parseFloat(scoreRate)]);
+        });
+      }
+    });
+  });
+  
+  const supCount = selectedSuppliers.length;
+  const monthCount = selectedMonths.length;
+  
+  // Dynamically adjust chart height and margins based on data size
+  const chartEl = document.getElementById('heatmapChart');
+  const dynamicHeight = Math.max(420, monthCount * 80 + 200);
+  chartEl.style.height = dynamicHeight + 'px';
+  
+  // Use abbreviated labels on x-axis, full names in tooltip
+  const xDataShort = [];
+  selectedSuppliers.forEach((s, si) => {
+    const shortName = s.length > 4 ? s.substring(0, 4) + '…' : s;
+    dims.forEach(d => xDataShort.push(shortName + '\n' + d));
+  });
+  
+  chart.setOption({
+    tooltip: {
+      confine: true,
+      formatter: function(p) {
+        const xLabel = xData[p.data[0]];
+        const parts = xLabel.split('\n');
+        return `<b>${parts[0]}</b><br>${parts[1]}<br>${yData[p.data[1]]}：得分率 <b>${p.data[2]}%</b>`;
+      }
+    },
+    grid: { 
+      top: 20, 
+      right: 85, 
+      bottom: 140, 
+      left: 70, 
+      containLabel: false 
+    },
+    dataZoom: [
+      {
+        type: 'slider',
+        xAxisIndex: 0,
+        show: supCount > 5,
+        bottom: 10,
+        height: 20,
+        start: 0,
+        end: 100,
+        borderColor: '#d1d5db',
+        fillerColor: 'rgba(79,110,247,0.15)'
+      }
+    ],
+    xAxis: {
+      type: 'category',
+      data: xDataShort,
+      splitArea: { show: true },
+      axisLabel: { 
+        fontSize: 11, 
+        interval: 0, 
+        rotate: 0,
+        margin: 8,
+        lineHeight: 16,
+        formatter: function(val) { return val; }
+      },
+      axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'category',
+      data: yData,
+      splitArea: { show: true },
+      axisLabel: { fontSize: 14, fontWeight: 'bold', margin: 12 },
+      axisTick: { show: false }
+    },
+    visualMap: {
+      min: 0, max: 100, calculable: true, orient: 'vertical', right: 5, top: 'middle',
+      inRange: { color: ['#ef4444', '#f97316', '#facc15', '#4ade80', '#15803d'] },
+      itemHeight: Math.min(220, dynamicHeight * 0.45),
+      textStyle: { fontSize: 12, fontWeight: 'bold' },
+      text: ['100%', '0%']
+    },
+    series: [{
+      type: 'heatmap',
+      data: data,
+      label: { 
+        show: true, 
+        fontSize: 11, 
+        fontWeight: 'bold', 
+        formatter: p => p.data[2] + '%',
+        color: '#374151'
+      },
+      emphasis: { 
+        itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,.3)', shadowOffsetX: 2, shadowOffsetY: 2 } 
+      },
+      itemStyle: { borderWidth: 2, borderColor: '#fff', borderRadius: 3 }
+    }]
+  }, true);
+  
+  // Resize after dynamic height change
+  setTimeout(() => chart.resize(), 50);
+}
+
+function makeSparkline(values, color, maxVal, label) {
+  // Generate inline SVG sparkline from array of numbers
+  const w = 100, h = 28, pad = 3;
+  const nums = values.map(v => parseFloat(v) || 0);
+  if (nums.length === 0) return '-';
+  if (nums.length === 1) {
+    return `<svg width="${w}" height="${h}" style="vertical-align:middle"><circle cx="${w/2}" cy="${h/2}" r="3" fill="${color}"/><text x="${w/2+6}" y="${h/2+4}" font-size="10" fill="${color}">${nums[0]}</text></svg>`;
+  }
+  const min = Math.min(...nums) - 1;
+  const max = Math.max(...nums) + 1;
+  const range = max - min || 1;
+  const stepX = (w - pad * 2) / (nums.length - 1);
+  const points = nums.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const dots = nums.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${color}" stroke="#fff" stroke-width="1"/>`;
+  }).join('');
+  const lastVal = nums[nums.length - 1];
+  return `<svg width="${w}" height="${h}" style="vertical-align:middle" title="${label}: ${nums.join(' → ')}">
+    <polyline points="${points.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+    <text x="${w-2}" y="${h/2+3}" font-size="9" fill="${color}" text-anchor="end" font-weight="600">${lastVal}</text>
+  </svg>`;
+}
+
+function buildTrendSparklines(supplierName) {
+  // Build 4 sparklines for A/B/C/D across all months
+  const dims = [
+    { key: 'A', color: '#4f6ef7', label: '品质', max: 25 },
+    { key: 'B', color: '#f59e0b', label: '成本', max: 20 },
+    { key: 'C', color: '#06b6d4', label: '交货', max: 20 },
+    { key: 'D', color: '#22c55e', label: '服务', max: 35 }
+  ];
+  
+  const dataMap = findSupplierAcrossMonths(supplierName);
+  
+  return dims.map(dim => {
+    const values = STATE.monthNames.map(mName => {
+      const d = dataMap[mName];
+      return d ? d[dim.key] : null;
+    }).filter(v => v !== null);
+    return `<div style="display:flex;align-items:center;gap:2px;font-size:11px;white-space:nowrap;">
+      <span style="color:${dim.color};font-weight:600;min-width:22px;">${dim.label}</span>
+      ${makeSparkline(values, dim.color, dim.max, dim.label)}
+    </div>`;
+  }).join('');
+}
+
+function updateRankTable() {
+  if (STATE.months.length < 2) {
+    document.getElementById('rankTable').innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>至少需要2个月份数据才能进行排名对比</p></div>';
+    return;
+  }
+  
+  const m1Name = document.getElementById('rankMonth1').value;
+  const m2Name = document.getElementById('rankMonth2').value;
+  if (!m1Name || !m2Name) return;
+  
+  const m1 = STATE.months.find(m => m.name === m1Name);
+  const m2 = STATE.months.find(m => m.name === m2Name);
+  if (!m1 || !m2) return;
+  
+  const gradeFilter = document.getElementById('rankGrade') ? document.getElementById('rankGrade').value : 'all';
+  const searchText = document.getElementById('rankSearch') ? document.getElementById('rankSearch').value.toLowerCase() : '';
+  
+  // Rank suppliers by score in each month (for rank display)
+  const rank1 = [...m1.data].sort((a, b) => b.total - a.total).map((s, i) => ({ ...s, rank: i + 1 }));
+  const rank2 = [...m2.data].sort((a, b) => b.total - a.total).map((s, i) => ({ ...s, rank: i + 1 }));
+  
+  // Sort order: follow latest uploaded month's original row order
+  const latestMonth = STATE.months[STATE.months.length - 1];
+  const orderedNames = latestMonth.data.map(s => s.name);
+  
+  // Build display list: iterate rank2 suppliers but sort by latestMonth order
+  const displayList = [];
+  rank2.forEach(s2 => {
+    const s1 = rank1.find(x => normalizeName(x.name) === normalizeName(s2.name));
+    const scoreDiff = s1 ? s2.total - s1.total : null;
+    // Apply filters
+    if (gradeFilter === 'up' && scoreDiff !== null && scoreDiff <= 0) return;
+    if (gradeFilter === 'down' && scoreDiff !== null && scoreDiff >= 0) return;
+    if (searchText && !s2.name.toLowerCase().includes(searchText)) return;
+    displayList.push({ s1, s2, scoreDiff });
+  });
+  
+  // Sort by latest month's original order
+  displayList.sort((a, b) => {
+    const idxA = orderedNames.findIndex(n => normalizeName(n) === normalizeName(a.s2.name));
+    const idxB = orderedNames.findIndex(n => normalizeName(n) === normalizeName(b.s2.name));
+    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+  });
+  
+  let html = `<table><thead><tr>
+    <th rowspan="2">供应商</th><th rowspan="2">类别</th>
+    <th colspan="3">${m1Name}</th>
+    <th colspan="3">${m2Name}</th>
+    <th rowspan="2">排名变化</th><th rowspan="2">分数变化</th>
+    <th rowspan="2">维度差异</th>
+    <th rowspan="2">差异原因</th>
+    <th rowspan="2">维度趋势</th>
+    <th rowspan="2">会议记录</th>
+  </tr><tr>
+    <th>排名</th><th>分数</th><th>等级</th>
+    <th>排名</th><th>分数</th><th>等级</th>
+  </tr></thead><tbody>`;
+  
+  function dimChangeText(label, v1, v2) {
+    const diff = v2 - v1;
+    const sign = diff > 0 ? '+' : '';
+    return `${label}: ${v1}→${v2} (${sign}${diff.toFixed(1)})`;
+  }
+  
+  function dimDiffHtml(s1, s2) {
+    if (!s1) return '<span style="color:var(--gray-500)">-</span>';
+    const parts = [
+      { label: '品质', v1: s1.A, v2: s2.A },
+      { label: '成本', v1: s1.B, v2: s2.B },
+      { label: '交货', v1: s1.C, v2: s2.C },
+      { label: '服务', v1: s1.D, v2: s2.D }
+    ];
+    // 省略变化为0的维度，不显示总分
+    return parts.filter(p => p.v2 - p.v1 !== 0).map(p => {
+      const text = dimChangeText(p.label, p.v1, p.v2);
+      const m = text.match(/\(([+-]?[\d.]+)\)/);
+      if (m) {
+        const v = parseFloat(m[1]);
+        const cls = v > 0 ? 'trend-up' : v < 0 ? 'trend-down' : 'trend-flat';
+        return `<div class="${cls}" style="white-space:nowrap;font-size:12px">${text}</div>`;
+      }
+      return `<div style="font-size:12px">${text}</div>`;
+    }).join('') || '<span style="color:var(--gray-500);font-size:12px">各维度持平</span>';
+  }
+  
+  displayList.forEach(({ s1, s2, scoreDiff }) => {
+    const rankChange = s1 ? s1.rank - s2.rank : '-';
+    const scoreChange = s1 ? scoreDiff.toFixed(1) : '-';
+    const rankClass = rankChange > 0 ? 'trend-up' : rankChange < 0 ? 'trend-down' : 'trend-flat';
+    const scoreClass = scoreChange > 0 ? 'trend-up' : scoreChange < 0 ? 'trend-down' : 'trend-flat';
+    const rankIcon = rankChange > 0 ? '↑' : rankChange < 0 ? '↓' : '→';
+    const scoreIcon = scoreChange > 0 ? '↑' : scoreChange < 0 ? '↓' : '→';
+    
+    let dimHtml = dimDiffHtml(s1, s2);
+    let reasonText = s1 ? generateAnalysisReason(s1, s2) : '<span style="color:var(--gray-500)">新增供应商</span>';
+    let sparkHtml = buildTrendSparklines(s2.name);
+    const noteKey = `${s2.name}_${m1Name}_${m2Name}`;
+    const noteVal = meetingNotesCache[noteKey] || '';
+    
+    html += `<tr>
+      <td style="font-weight:500">${s2.name}</td>
+      <td>${s2.category}</td>
+      <td>${s1 ? s1.rank : '-'}</td>
+      <td>${s1 ? s1.total : '-'}</td>
+      <td>${s1 ? `<span class="grade-badge ${getGradeClass(s1.grade)}">${s1.grade}</span>` : '-'}</td>
+      <td><strong>${s2.rank}</strong></td>
+      <td><strong>${s2.total}</strong></td>
+      <td><span class="grade-badge ${getGradeClass(s2.grade)}">${s2.grade}</span></td>
+      <td class="${rankClass}">${rankChange !== '-' ? rankIcon + ' ' + Math.abs(rankChange) : '新增'}</td>
+      <td class="${scoreClass}">${scoreChange !== '-' ? scoreIcon + ' ' + Math.abs(scoreChange) : '新增'}</td>
+      <td>${dimHtml}</td>
+      <td style="max-width:220px;white-space:normal;font-size:12px;line-height:1.5">${reasonText}</td>
+      <td style="min-width:130px">${sparkHtml}</td>
+      <td><textarea class="meeting-notes-textarea" data-note-key="${noteKey}" onchange="meetingNotesCache[this.dataset.noteKey]=this.value" placeholder="输入会议记录...">${noteVal}</textarea></td>
+    </tr>`;
+  });
+  
+  // Suppliers in m1 but not in m2
+  rank1.forEach(s1 => {
+    const inM2 = rank2.find(x => normalizeName(x.name) === normalizeName(s1.name));
+    if (!inM2) {
+      let sparkHtml = buildTrendSparklines(s1.name);
+      const noteKey2 = `${s1.name}_${m1Name}_${m2Name}`;
+      const noteVal2 = meetingNotesCache[noteKey2] || '';
+      html += `<tr style="opacity:.5">
+        <td>${s1.name}</td><td>${s1.category}</td>
+        <td>${s1.rank}</td><td>${s1.total}</td>
+        <td><span class="grade-badge ${getGradeClass(s1.grade)}">${s1.grade}</span></td>
+        <td colspan="7" style="color:var(--gray-500)">该月无数据</td>
+        <td style="min-width:130px">${sparkHtml}</td>
+        <td><textarea class="meeting-notes-textarea" data-note-key="${noteKey2}" onchange="meetingNotesCache[this.dataset.noteKey]=this.value" placeholder="输入会议记录...">${noteVal2}</textarea></td>
+      </tr>`;
+    }
+  });
+  
+  html += '</tbody></table>';
+  document.getElementById('rankTable').innerHTML = html;
+}
+
+function generateAnalysisReason(s1, s2) {
+  // 差异原因与维度差异列保持一致：列出四个维度中变化不为0的项，省略总分
+  const reasons = [];
+  const dimNames = { A: '品质', B: '成本', C: '交货', D: '服务' };
+  const dims = ['A', 'B', 'C', 'D'];
+  
+  dims.forEach(d => {
+    const diff = s2[d] - s1[d];
+    if (diff === 0) return; // 变化为0的省略
+    const sign = diff > 0 ? '+' : '';
+    reasons.push(`${dimNames[d]}${sign}${diff.toFixed(1)}`);
+  });
+  
+  if (reasons.length === 0) reasons.push('各维度基本持平');
+  
+  return reasons.join('，');
+}
+
+function updateAnalysisList() {
+  if (STATE.months.length < 2) {
+    document.getElementById('analysisList').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>至少需要2个月份数据才能进行差异分析</p></div>';
+    return;
+  }
+  
+  const m1Name = document.getElementById('analysisMonth1').value;
+  const m2Name = document.getElementById('analysisMonth2').value;
+  const gradeFilter = document.getElementById('analysisGrade').value;
+  const searchText = document.getElementById('analysisSearch').value.toLowerCase();
+  
+  if (!m1Name || !m2Name) return;
+  
+  const m1 = STATE.months.find(m => m.name === m1Name);
+  const m2 = STATE.months.find(m => m.name === m2Name);
+  if (!m1 || !m2) return;
+  
+  let items = [];
+  m2.data.forEach(s2 => {
+    const s1 = m1.data.find(x => normalizeName(x.name) === normalizeName(s2.name));
+    if (!s1) return;
+    
+    const diff = s2.total - s1.total;
+    if (gradeFilter === 'up' && diff <= 0) return;
+    if (gradeFilter === 'down' && diff >= 0) return;
+    if (searchText && !s2.name.toLowerCase().includes(searchText)) return;
+    
+    items.push({ s1, s2, diff });
+  });
+  
+  // Sort by absolute difference descending
+  items.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+  
+  if (items.length === 0) {
+    document.getElementById('analysisList').innerHTML = '<div class="empty-state"><p>没有匹配的差异数据</p></div>';
+    return;
+  }
+  
+  let html = '';
+  items.forEach(({ s1, s2, diff }) => {
+    const reason = generateAnalysisReason(s1, s2);
+    const trendClass = diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : 'trend-flat';
+    const trendIcon = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+    
+    html += `<div class="analysis-row">
+      <div class="analysis-header">
+        <span class="analysis-name">${s2.name}</span>
+        <div class="analysis-badges">
+          <span class="grade-badge ${getGradeClass(s1.grade)}">${m1Name}: ${s1.grade}</span>
+          <span class="grade-badge ${getGradeClass(s2.grade)}">${m2Name}: ${s2.grade}</span>
+          <span class="${trendClass}" style="font-size:14px;font-weight:700">${trendIcon} ${Math.abs(diff).toFixed(1)}</span>
+        </div>
+      </div>
+      <div class="analysis-dims">
+        <div class="dim-item">品质: <span>${s1.A}→${s2.A}</span> (${s2.A - s1.A > 0 ? '+' : ''}${(s2.A - s1.A).toFixed(1)})</div>
+        <div class="dim-item">成本: <span>${s1.B}→${s2.B}</span> (${s2.B - s1.B > 0 ? '+' : ''}${(s2.B - s1.B).toFixed(1)})</div>
+        <div class="dim-item">交货: <span>${s1.C}→${s2.C}</span> (${s2.C - s1.C > 0 ? '+' : ''}${(s2.C - s1.C).toFixed(1)})</div>
+        <div class="dim-item">服务: <span>${s1.D}→${s2.D}</span> (${s2.D - s1.D > 0 ? '+' : ''}${(s2.D - s1.D).toFixed(1)})</div>
+        <div class="dim-item">总分: <span>${s1.total}→${s2.total}</span></div>
+      </div>
+      <div class="analysis-body">
+        <div class="reason">📝 ${reason}</div>
+      </div>
+    </div>`;
+  });
+  
+  document.getElementById('analysisList').innerHTML = html;
+}
+
+function updateDetailTable() {
+  const monthName = document.getElementById('detailMonth').value;
+  const gradeFilter = document.getElementById('detailGrade').value;
+  const searchText = document.getElementById('detailSearch').value.toLowerCase();
+  
+  const month = STATE.months.find(m => m.name === monthName);
+  if (!month) {
+    document.getElementById('detailTable').innerHTML = '<div class="empty-state"><p>请选择月份</p></div>';
+    return;
+  }
+  
+  let data = [...month.data];
+  if (gradeFilter !== 'all') data = data.filter(s => getGradeLetter(s.grade) === gradeFilter);
+  if (searchText) data = data.filter(s => s.name.toLowerCase().includes(searchText) || s.category.toLowerCase().includes(searchText));
+  
+  data.sort((a, b) => b.total - a.total);
+  
+  let html = `<table><thead>
+  <tr>
+    <th rowspan="2" style="text-align:left">#</th>
+    <th rowspan="2" style="text-align:left;min-width:160px">供应商名称</th>
+    <th rowspan="2" style="text-align:left">供应商类别</th>
+    <th rowspan="2">总分</th>
+    <th rowspan="2">供应商等级</th>
+    <th colspan="4" class="group-a">A 品质考核（25）</th>
+    <th rowspan="2" class="group-a">A总分</th>
+    <th colspan="5" class="group-b">B 成本考核（20）</th>
+    <th rowspan="2" class="group-b">B总分</th>
+    <th colspan="3" class="group-c">C 交货考核（20）</th>
+    <th rowspan="2" class="group-c">C总分</th>
+    <th colspan="7" class="group-d">D 服务考核（35）</th>
+    <th rowspan="2" class="group-d">D总分</th>
+    <th rowspan="2" style="text-align:left;min-width:120px">会议结论</th>
+    <th colspan="5" class="group-exception">异常原因分析</th>
+    <th rowspan="2" class="group-exception">其他</th>
+  </tr>
+  <tr>
+    <th class="sub-a">a1验货合格率(7)</th>
+    <th class="sub-a">a2综合客诉率(8)</th>
+    <th class="sub-a">a3新品开发质量(5)</th>
+    <th class="sub-a">a4质量改善完成率(5)</th>
+    <th class="sub-b">b1价格水平(5)</th>
+    <th class="sub-b">b2供货周期(4)</th>
+    <th class="sub-b">b3付款条件(5)</th>
+    <th class="sub-b">b4报价准确(3)</th>
+    <th class="sub-b">b5成本支持(3)</th>
+    <th class="sub-c">c1交货延迟批次(8)</th>
+    <th class="sub-c">c2交货数量短缺(6)</th>
+    <th class="sub-c">c3订单交付配合度(6)</th>
+    <th class="sub-d">d1包材技术支持(10)</th>
+    <th class="sub-d">d1包材技术评估(10)</th>
+    <th class="sub-d">d1成品技术支持(10)</th>
+    <th class="sub-d">d1成品技术评估(10)</th>
+    <th class="sub-d">d2研发打样(5)</th>
+    <th class="sub-d">d2业务支持度(5)</th>
+    <th class="sub-d">d2响应配合度(5)</th>
+    <th class="sub-exception">品质考核</th>
+    <th class="sub-exception">成本考核</th>
+    <th class="sub-exception">交货考核</th>
+    <th class="sub-exception">服务考核-成品</th>
+    <th class="sub-exception">服务考核-包材</th>
+  </tr>
+  </thead><tbody>`;
+  
+  data.forEach((s, i) => {
+    html += `<tr>
+      <td style="text-align:left">${i + 1}</td>
+      <td style="text-align:left;font-weight:500">${s.name}</td>
+      <td style="text-align:left">${s.category}</td>
+      <td style="font-weight:700;font-size:15px">${s.total}</td>
+      <td><span class="grade-badge ${getGradeClass(s.grade)}">${s.grade}</span></td>
+      <td>${s.a1||0}</td><td>${s.a2||0}</td><td>${s.a3||0}</td><td>${s.a4||0}</td>
+      <td style="font-weight:600">${s.A||0}</td>
+      <td>${s.b1||0}</td><td>${s.b2||0}</td><td>${s.b3||0}</td><td>${s.b4||0}</td><td>${s.b5||0}</td>
+      <td style="font-weight:600">${s.B||0}</td>
+      <td>${s.c1||0}</td><td>${s.c2||0}</td><td>${s.c3||0}</td>
+      <td style="font-weight:600">${s.C||0}</td>
+      <td>${s.d1a||0}</td><td>${s.d1b||0}</td><td>${s.d2a||0}</td><td>${s.d2b||0}</td><td>${s.d2c||0}</td><td>${s.d2d||0}</td><td>${s.d2e||0}</td>
+      <td style="font-weight:600">${s.D||0}</td>
+      <td style="text-align:left;max-width:200px;white-space:normal;font-size:12px">${s.conclusion || '-'}</td>
+      <td style="text-align:left;max-width:150px;white-space:normal;font-size:12px;color:#be123c">${s.exceptionQuality || '-'}</td>
+      <td style="text-align:left;max-width:150px;white-space:normal;font-size:12px;color:#be123c">${s.exceptionCost || '-'}</td>
+      <td style="text-align:left;max-width:150px;white-space:normal;font-size:12px;color:#be123c">${s.exceptionDelivery || '-'}</td>
+      <td style="text-align:left;max-width:150px;white-space:normal;font-size:12px;color:#be123c">${s.exceptionServiceProduct || '-'}</td>
+      <td style="text-align:left;max-width:150px;white-space:normal;font-size:12px;color:#be123c">${s.exceptionServicePackage || '-'}</td>
+      <td style="text-align:left;max-width:150px;white-space:normal;font-size:12px;color:#be123c">${s.exceptionOther || '-'}</td>
+    </tr>`;
+  });
+  
+  html += '</tbody></table>';
+  document.getElementById('detailTable').innerHTML = html;
+}
+
+// ========== Export ==========
+function exportCurrentMonth() {
+  try {
+    if (typeof XLSX === 'undefined') {
+      showNotification('Excel组件加载失败，请刷新页面后重试', 'error');
+      return;
+    }
+    const monthName = document.getElementById('detailMonth').value;
+    const month = STATE.months.find(m => m.name === monthName);
+    if (!month) {
+      showNotification('未找到该月份数据', 'error');
+      return;
+    }
+    
+    // Row 1: Group headers
+    const header1 = ['', '供应商名称', '供应商类别', '总分', '供应商等级',
+      'A 品质考核（25）', '', '', '', 'A总分',
+      'B 成本考核（20）', '', '', '', '', 'B总分',
+      'C 交货考核（20）', '', '', 'C总分',
+      'D 服务考核（35）', '', '', '', '', '', '', 'D总分',
+      '会议结论',
+      '异常原因分析', '', '', '', '',
+      '其他'];
+    // Row 2: Sub-item headers
+    const header2 = ['', '', '', '', '',
+      'a1验货合格率(7)', 'a2综合客诉率(8)', 'a3新品开发质量(5)', 'a4质量改善完成率(5)', '',
+      'b1价格水平(5)', 'b2供货周期(4)', 'b3付款条件(5)', 'b4报价准确(3)', 'b5成本支持(3)', '',
+      'c1交货延迟批次(8)', 'c2交货数量短缺(6)', 'c3订单交付配合度(6)', '',
+      'd1包材技术支持(10)', 'd1包材技术评估(10)', 'd1成品技术支持(10)', 'd1成品技术评估(10)',
+      'd2研发打样(5)', 'd2业务支持度(5)', 'd2响应配合度(5)', '',
+      '',
+      '品质考核', '成本考核', '交货考核', '服务考核-成品', '服务考核-包材',
+      ''];
+    
+    const rows = [header1, header2];
+    [...month.data].sort((a, b) => b.total - a.total).forEach((s, i) => {
+      rows.push([i + 1, s.name, s.category, s.total, s.grade,
+        s.a1||0, s.a2||0, s.a3||0, s.a4||0, s.A||0,
+        s.b1||0, s.b2||0, s.b3||0, s.b4||0, s.b5||0, s.B||0,
+        s.c1||0, s.c2||0, s.c3||0, s.C||0,
+        s.d1a||0, s.d1b||0, s.d2a||0, s.d2b||0, s.d2c||0, s.d2d||0, s.d2e||0, s.D||0,
+        s.conclusion||'',
+        s.exceptionQuality||'', s.exceptionCost||'', s.exceptionDelivery||'',
+        s.exceptionServiceProduct||'', s.exceptionServicePackage||'', s.exceptionOther||'']);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Apply merges for group headers
+    ws['!merges'] = [
+      {s:{r:0,c:5},e:{r:0,c:8}},   // A 品质考核（25）
+      {s:{r:0,c:9},e:{r:1,c:9}},   // A总分
+      {s:{r:0,c:10},e:{r:0,c:14}}, // B 成本考核（20）
+      {s:{r:0,c:15},e:{r:1,c:15}}, // B总分
+      {s:{r:0,c:16},e:{r:0,c:18}}, // C 交货考核（20）
+      {s:{r:0,c:19},e:{r:1,c:19}}, // C总分
+      {s:{r:0,c:20},e:{r:0,c:26}}, // D 服务考核（35）
+      {s:{r:0,c:27},e:{r:1,c:27}}, // D总分
+      {s:{r:0,c:0},e:{r:1,c:0}},   // 序号
+      {s:{r:0,c:1},e:{r:1,c:1}},   // 供应商名称
+      {s:{r:0,c:2},e:{r:1,c:2}},   // 供应商类别
+      {s:{r:0,c:3},e:{r:1,c:3}},   // 总分
+      {s:{r:0,c:4},e:{r:1,c:4}},   // 供应商等级
+      {s:{r:0,c:28},e:{r:1,c:28}}, // 会议结论
+      {s:{r:0,c:29},e:{r:0,c:33}}, // 异常原因分析
+      {s:{r:0,c:34},e:{r:1,c:34}}, // 其他
+    ];
+    // Set column widths
+    ws['!cols'] = [
+      {wch:5},{wch:30},{wch:14},{wch:6},{wch:14},
+      {wch:10},{wch:10},{wch:10},{wch:10},{wch:6},
+      {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:6},
+      {wch:10},{wch:10},{wch:10},{wch:6},
+      {wch:10},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8},{wch:8},{wch:6},
+      {wch:16},
+      {wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, monthName + '考核明细');
+    XLSX.writeFile(wb, `供应商绩效考核-${monthName}.xlsx`);
+    showNotification(`✅ ${monthName}数据导出成功`, 'success');
+  } catch (err) {
+    showNotification('导出失败: ' + err.message, 'error');
+  }
+}
+
+function exportAllMonths() {
+  try {
+    if (typeof XLSX === 'undefined') {
+      showNotification('Excel组件加载失败，请刷新页面后重试', 'error');
+      return;
+    }
+    if (STATE.months.length === 0) {
+      showNotification('暂无数据可导出', 'error');
+      return;
+    }
+
+    // Row 1: Group headers (with 月份 prefix)
+    const header1 = ['月份', '', '供应商名称', '供应商类别', '总分', '供应商等级',
+      'A 品质考核（25）', '', '', '', 'A总分',
+      'B 成本考核（20）', '', '', '', '', 'B总分',
+      'C 交货考核（20）', '', '', 'C总分',
+      'D 服务考核（35）', '', '', '', '', '', '', 'D总分',
+      '会议结论',
+      '异常原因分析', '', '', '', '',
+      '其他'];
+    // Row 2: Sub-item headers
+    const header2 = ['', '', '', '', '', '',
+      'a1验货合格率(7)', 'a2综合客诉率(8)', 'a3新品开发质量(5)', 'a4质量改善完成率(5)', '',
+      'b1价格水平(5)', 'b2供货周期(4)', 'b3付款条件(5)', 'b4报价准确(3)', 'b5成本支持(3)', '',
+      'c1交货延迟批次(8)', 'c2交货数量短缺(6)', 'c3订单交付配合度(6)', '',
+      'd1包材技术支持(10)', 'd1包材技术评估(10)', 'd1成品技术支持(10)', 'd1成品技术评估(10)',
+      'd2研发打样(5)', 'd2业务支持度(5)', 'd2响应配合度(5)', '',
+      '',
+      '品质考核', '成本考核', '交货考核', '服务考核-成品', '服务考核-包材',
+      ''];
+
+    const rows = [header1, header2];
+    STATE.months.forEach(month => {
+      [...month.data].sort((a, b) => b.total - a.total).forEach((s, i) => {
+        rows.push([month.name, i + 1, s.name, s.category, s.total, s.grade,
+          s.a1||0, s.a2||0, s.a3||0, s.a4||0, s.A||0,
+          s.b1||0, s.b2||0, s.b3||0, s.b4||0, s.b5||0, s.B||0,
+          s.c1||0, s.c2||0, s.c3||0, s.C||0,
+          s.d1a||0, s.d1b||0, s.d2a||0, s.d2b||0, s.d2c||0, s.d2d||0, s.d2e||0, s.D||0,
+          s.conclusion||'',
+          s.exceptionQuality||'', s.exceptionCost||'', s.exceptionDelivery||'',
+          s.exceptionServiceProduct||'', s.exceptionServicePackage||'', s.exceptionOther||'']);
+      });
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Apply merges for group headers
+    ws['!merges'] = [
+      {s:{r:0,c:6},e:{r:0,c:9}},   // A 品质考核（25）
+      {s:{r:0,c:10},e:{r:1,c:10}}, // A总分
+      {s:{r:0,c:11},e:{r:0,c:15}}, // B 成本考核（20）
+      {s:{r:0,c:16},e:{r:1,c:16}}, // B总分
+      {s:{r:0,c:17},e:{r:0,c:19}}, // C 交货考核（20）
+      {s:{r:0,c:20},e:{r:1,c:20}}, // C总分
+      {s:{r:0,c:21},e:{r:0,c:27}}, // D 服务考核（35）
+      {s:{r:0,c:28},e:{r:1,c:28}}, // D总分
+      {s:{r:0,c:0},e:{r:1,c:0}},   // 月份
+      {s:{r:0,c:1},e:{r:1,c:1}},   // 序号
+      {s:{r:0,c:2},e:{r:1,c:2}},   // 供应商名称
+      {s:{r:0,c:3},e:{r:1,c:3}},   // 供应商类别
+      {s:{r:0,c:4},e:{r:1,c:4}},   // 总分
+      {s:{r:0,c:5},e:{r:1,c:5}},   // 供应商等级
+      {s:{r:0,c:29},e:{r:1,c:29}}, // 会议结论
+      {s:{r:0,c:30},e:{r:0,c:34}}, // 异常原因分析
+      {s:{r:0,c:35},e:{r:1,c:35}}, // 其他
+    ];
+    ws['!cols'] = [
+      {wch:6},{wch:5},{wch:30},{wch:14},{wch:6},{wch:14},
+      {wch:10},{wch:10},{wch:10},{wch:10},{wch:6},
+      {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:6},
+      {wch:10},{wch:10},{wch:10},{wch:6},
+      {wch:10},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8},{wch:8},{wch:6},
+      {wch:16},
+      {wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '全部月份考核明细');
+    XLSX.writeFile(wb, '供应商绩效考核-全部月份汇总.xlsx');
+    showNotification(`✅ 全部 ${STATE.months.length} 个月份数据导出成功`, 'success');
+  } catch (err) {
+    showNotification('导出失败: ' + err.message, 'error');
+  }
+}
+
+function exportRankAnalysis() {
+  try {
+    if (typeof XLSX === 'undefined') {
+      showNotification('Excel组件加载失败，请刷新页面后重试', 'error');
+      return;
+    }
+    
+    const m1Name = document.getElementById('rankMonth1').value;
+    const m2Name = document.getElementById('rankMonth2').value;
+    if (!m1Name || !m2Name) { showNotification('请先选择对比月份', 'error'); return; }
+    
+    const m1 = STATE.months.find(m => m.name === m1Name);
+    const m2 = STATE.months.find(m => m.name === m2Name);
+    if (!m1 || !m2) return;
+    
+    const rank1 = [...m1.data].sort((a, b) => b.total - a.total).map((s, i) => ({ ...s, rank: i + 1 }));
+    const rank2 = [...m2.data].sort((a, b) => b.total - a.total).map((s, i) => ({ ...s, rank: i + 1 }));
+    
+    const gradeFilter = document.getElementById('rankGrade').value;
+    const searchText = document.getElementById('rankSearch').value.toLowerCase();
+    
+    const header = ['供应商', '类别', 
+      m1Name + '排名', m1Name + '分数', m1Name + '等级',
+      m2Name + '排名', m2Name + '分数', m2Name + '等级',
+      '排名变化', '分数变化',
+      '品质变化', '成本变化', '交货变化', '服务变化', '总分变化',
+      '差异原因', '会议记录'];
+    
+    const rows = [header];
+    
+    rank2.forEach(s2 => {
+      const s1 = rank1.find(x => normalizeName(x.name) === normalizeName(s2.name));
+      const scoreDiff = s1 ? s2.total - s1.total : null;
+      if (gradeFilter === 'up' && scoreDiff !== null && scoreDiff <= 0) return;
+      if (gradeFilter === 'down' && scoreDiff !== null && scoreDiff >= 0) return;
+      if (searchText && !s2.name.toLowerCase().includes(searchText)) return;
+      
+      const rankChange = s1 ? s1.rank - s2.rank : '-';
+      const scoreChange = s1 ? scoreDiff.toFixed(1) : '-';
+      const aChange = s1 ? `A:${s1.A}→${s2.A}(${(s2.A-s1.A)>=0?'+':''}${(s2.A-s1.A).toFixed(1)})` : '-';
+      const bChange = s1 ? `B:${s1.B}→${s2.B}(${(s2.B-s1.B)>=0?'+':''}${(s2.B-s1.B).toFixed(1)})` : '-';
+      const cChange = s1 ? `C:${s1.C}→${s2.C}(${(s2.C-s1.C)>=0?'+':''}${(s2.C-s1.C).toFixed(1)})` : '-';
+      const dChange = s1 ? `D:${s1.D}→${s2.D}(${(s2.D-s1.D)>=0?'+':''}${(s2.D-s1.D).toFixed(1)})` : '-';
+      const totalChange = s1 ? `总分:${s1.total}→${s2.total}(${scoreDiff>=0?'+':''}${scoreDiff.toFixed(1)})` : '-';
+      const reason = s1 ? generateAnalysisReason(s1, s2) : '新增供应商';
+      const noteKey = `${s2.name}_${m1Name}_${m2Name}`;
+      const noteVal = meetingNotesCache[noteKey] || '';
+      
+      rows.push([s2.name, s2.category,
+        s1 ? s1.rank : '-', s1 ? s1.total : '-', s1 ? s1.grade : '-',
+        s2.rank, s2.total, s2.grade,
+        rankChange, scoreChange,
+        aChange, bChange, cChange, dChange, totalChange,
+        reason, noteVal]);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Set column widths
+    ws['!cols'] = [
+      {wch:25},{wch:12},{wch:8},{wch:8},{wch:14},
+      {wch:8},{wch:8},{wch:14},{wch:8},{wch:8},
+      {wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:35},{wch:30}
+    ];
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '排名变动与差异分析');
+    XLSX.writeFile(wb, `排名变动与差异分析-${m1Name}vs${m2Name}.xlsx`);
+    showNotification('✅ 排名数据导出成功', 'success');
+  } catch (err) {
+    showNotification('导出失败: ' + err.message, 'error');
+  }
+}
+
+// ========== Data Management ==========
+function addMonth(monthData) {
+  // Check if month already exists
+  const existingIdx = STATE.months.findIndex(m => m.name === monthData.name);
+  if (existingIdx >= 0) {
+    STATE.months[existingIdx] = monthData;
+  } else {
+    STATE.months.push(monthData);
+  }
+  STATE.monthNames = STATE.months.map(m => m.name);
+  updateAll();
+}
+
+function removeMonth(idx) {
+  STATE.months.splice(idx, 1);
+  STATE.monthNames = STATE.months.map(m => m.name);
+  updateAll();
+}
+
+
+// ========== Supplier Pool ==========
+let supplierPool = [];
+let poolEditIndex = -1; // -1 means adding new, >= 0 means editing
+
+function loadSupplierPool() {
+  try {
+    const data = localStorage.getItem('supplier_pool');
+    supplierPool = data ? JSON.parse(data) : [];
+    // Backward compatibility: add disabled field if missing
+    supplierPool.forEach(s => { if (s.disabled === undefined) s.disabled = false; });
+  } catch (e) {
+    supplierPool = [];
+  }
+}
+
+function saveSupplierPoolToStorage() {
+  localStorage.setItem('supplier_pool', JSON.stringify(supplierPool));
+}
+
+function renderSupplierPool() {
+  const container = document.getElementById('supplierPoolTable');
+  const activeCount = supplierPool.filter(s => !s.disabled).length;
+  const disabledCount = supplierPool.filter(s => s.disabled).length;
+  document.getElementById('poolTotalCount').textContent = supplierPool.length;
+  
+  // Update stats to show active/disabled counts
+  let statsHtml = '<div class="pool-stat-item"><span>供应商总数：</span><span class="pool-stat-value" id="poolTotalCount">' + supplierPool.length + '</span></div>';
+  statsHtml += '<div class="pool-stat-item" style="background:#dcfce7;"><span>启用：</span><span class="pool-stat-value" style="color:#16a34a;">' + activeCount + '</span></div>';
+  statsHtml += '<div class="pool-stat-item" style="background:#fee2e2;"><span>禁用：</span><span class="pool-stat-value" style="color:#dc2626;">' + disabledCount + '</span></div>';
+  document.querySelector('.pool-stats').innerHTML = statsHtml;
+  
+  if (supplierPool.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📦</div><div>暂无供应商，点击"新增供应商"添加</div></div>';
+    return;
+  }
+  
+  let html = '<table class="supplier-pool-table"><thead><tr><th style="width:60px">序号</th><th>供应商名称</th><th style="width:150px">类别</th><th style="width:80px">状态</th><th style="width:220px">操作</th></tr></thead><tbody>';
+  supplierPool.forEach((s, i) => {
+    const isDisabled = s.disabled === true;
+    const rowClass = isDisabled ? 'supplier-disabled' : '';
+    const statusText = isDisabled ? '<span style="color:var(--danger);font-weight:600;">已禁用</span>' : '<span style="color:var(--success);font-weight:600;">启用中</span>';
+    const toggleBtnText = isDisabled ? '✅ 启用' : '🚫 禁用';
+    const toggleBtnClass = isDisabled ? 'enable-btn' : 'disable-btn';
+    html += `<tr class="${rowClass}">
+      <td>${i + 1}</td>
+      <td style="font-weight:500">${s.name}</td>
+      <td>${s.category}</td>
+      <td>${statusText}</td>
+      <td>
+        <button class="pool-action-btn ${toggleBtnClass}" onclick="togglePoolSupplier(${i})">${toggleBtnText}</button>
+        <button class="pool-action-btn" onclick="editPoolSupplier(${i})" style="margin-left:4px">✏️ 编辑</button>
+        <button class="pool-action-btn danger" onclick="deletePoolSupplier(${i})" style="margin-left:4px">🗑️ 删除</button>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  
+  // Update category datalist
+  updatePoolCategoryList();
+}
+
+function updatePoolCategoryList() {
+  const categories = new Set();
+  supplierPool.forEach(s => { if (s.category) categories.add(s.category); });
+  // Also add categories from assessment data
+  STATE.months.forEach(m => m.data.forEach(s => { if (s.category) categories.add(s.category); }));
+  const datalist = document.getElementById('poolCategoryList');
+  if (datalist) {
+    datalist.innerHTML = [...categories].sort().map(c => `<option value="${c}">`).join('');
+  }
+}
+
+function openPoolModal(index) {
+  poolEditIndex = index !== undefined ? index : -1;
+  const modal = document.getElementById('poolModal');
+  const title = document.getElementById('poolModalTitle');
+  const nameInput = document.getElementById('poolSupplierName');
+  const catInput = document.getElementById('poolSupplierCategory');
+  
+  if (poolEditIndex >= 0) {
+    title.textContent = '编辑供应商';
+    nameInput.value = supplierPool[poolEditIndex].name;
+    catInput.value = supplierPool[poolEditIndex].category;
+  } else {
+    title.textContent = '新增供应商';
+    nameInput.value = '';
+    catInput.value = '';
+  }
+  
+  updatePoolCategoryList();
+  modal.classList.add('open');
+  setTimeout(() => nameInput.focus(), 100);
+}
+
+function closePoolModal() {
+  document.getElementById('poolModal').classList.remove('open');
+  poolEditIndex = -1;
+}
+
+function savePoolSupplier() {
+  const name = document.getElementById('poolSupplierName').value.trim();
+  const category = document.getElementById('poolSupplierCategory').value.trim();
+  
+  if (!name) {
+    showNotification('请输入供应商名称', 'error');
+    return;
+  }
+  if (!category) {
+    showNotification('请输入供应商类别', 'error');
+    return;
+  }
+  
+  if (poolEditIndex >= 0) {
+    const wasDisabled = supplierPool[poolEditIndex].disabled || false;
+    supplierPool[poolEditIndex] = { name, category, disabled: wasDisabled };
+    showNotification('✅ 供应商信息已更新', 'success');
+  } else {
+    // Check duplicate
+    if (supplierPool.some(s => s.name === name)) {
+      showNotification('该供应商已存在', 'error');
+      return;
+    }
+    supplierPool.push({ name, category, disabled: false });
+    showNotification('✅ 供应商已添加', 'success');
+  }
+  
+  saveSupplierPoolToStorage();
+  renderSupplierPool();
+  closePoolModal();
+}
+
+function editPoolSupplier(index) {
+  openPoolModal(index);
+}
+
+function deletePoolSupplier(index) {
+  const name = supplierPool[index].name;
+  if (confirm(`确定要删除供应商"${name}"吗？`)) {
+    supplierPool.splice(index, 1);
+    saveSupplierPoolToStorage();
+    renderSupplierPool();
+    showNotification(`已删除"${name}"`, 'success');
+  }
+}
+
+function togglePoolSupplier(index) {
+  const s = supplierPool[index];
+  s.disabled = !s.disabled;
+  saveSupplierPoolToStorage();
+  renderSupplierPool();
+  const action = s.disabled ? '已禁用' : '已启用';
+  showNotification(`${action}供应商"${s.name}"`, 'success');
+}
+
+function importPoolToAssessment() {
+  if (STATE.months.length === 0) {
+    showNotification('请先加载考核数据后再导入', 'error');
+    return;
+  }
+  showNotification('该功能即将上线，敬请期待', 'success');
+}
+
+// ========== Supplier Pool Export/Import ==========
+function exportSupplierPool() {
+  if (supplierPool.length === 0) {
+    showNotification('供应商池为空，无数据可导出', 'error');
+    return;
+  }
+  try {
+    if (typeof XLSX === 'undefined') {
+      showNotification('Excel组件加载失败，请刷新页面', 'error');
+      return;
+    }
+    const rows = [['序号', '供应商名称', '类别']];
+    supplierPool.forEach((s, i) => {
+      rows.push([i + 1, s.name, s.category]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:6},{wch:35},{wch:15}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '供应商池');
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `供应商池-${dateStr}.xlsx`);
+    showNotification(`✅ 已导出 ${supplierPool.length} 个供应商`, 'success');
+  } catch (err) {
+    showNotification('导出失败: ' + err.message, 'error');
+  }
+}
+
+function importSupplierPoolBatch(input) {
+  if (!input.files || input.files.length === 0) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      
+      let added = 0, skipped = 0;
+      const existingNames = new Set(supplierPool.map(s => s.name));
+      
+      // Skip header row: check if first data row looks like a header
+      let startRow = 0;
+      if (rows.length > 0) {
+        const firstRow = rows[0];
+        const firstCell = String(firstRow[0] || '').trim();
+        const secondCell = String(firstRow[1] || '').trim();
+        if (firstCell.includes('序号') || firstCell.includes('编号') || 
+            secondCell.includes('名称') || secondCell.includes('供应商')) {
+          startRow = 1;
+        }
+      }
+      
+      for (let i = startRow; i < rows.length; i++) {
+        const row = rows[i];
+        // Name is in column 1 (second column), category in column 2
+        let name = String(row[1] || '').trim();
+        let category = String(row[2] || '').trim();
+        
+        // If column 1 is empty, try column 0
+        if (!name) {
+          name = String(row[0] || '').trim();
+          category = String(row[1] || '').trim();
+        }
+        
+        if (!name || name === '供应商名称') continue;
+        
+        if (existingNames.has(name)) {
+          skipped++;
+          continue;
+        }
+        
+        supplierPool.push({ name, category: category || '未分类', disabled: false });
+        existingNames.add(name);
+        added++;
+      }
+      
+      saveSupplierPoolToStorage();
+      renderSupplierPool();
+      showNotification(`✅ 导入完成：新增 ${added} 个，跳过重复 ${skipped} 个`, 'success');
+    } catch (err) {
+      showNotification('导入失败: ' + err.message, 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ========== Manual Scoring ==========
+let scoringData = []; // current scoring rows
+
+function getGradeFromTotal(total) {
+  if (total >= 86) return 'A级（优秀）';
+  if (total >= 76) return 'B级（良好）';
+  if (total >= 60) return 'C级（合格）';
+  return 'D级（不合格）';
+}
+
+function populateScoringMonthSelect() {
+  const sel = document.getElementById('scoringMonth');
+  const curVal = sel.value;
+  sel.innerHTML = '<option value="">-- 请选择月份 --</option>';
+  STATE.months.forEach(m => {
+    const lockLabel = m.locked ? ' 🔒已提交' : ' 📝草稿';
+    sel.innerHTML += `<option value="${m.name}">${m.name}${lockLabel}</option>`;
+  });
+  if (curVal && STATE.monthNames.includes(curVal)) sel.value = curVal;
+}
+
+function createScoringMonth() {
+  const name = document.getElementById('newScoringMonth').value.trim();
+  if (!name) {
+    showNotification('请输入月份名称', 'error');
+    return;
+  }
+  if (STATE.monthNames.includes(name)) {
+    // Already exists, just select it
+    document.getElementById('scoringMonth').value = name;
+    document.getElementById('newScoringMonth').value = '';
+    loadScoringData();
+    showNotification(`月份"${name}"已存在，已切换到该月份`, 'success');
+    return;
+  }
+  // Create empty month
+  addMonth({ name, data: [], fileName: name + '手动打分' });
+  document.getElementById('newScoringMonth').value = '';
+  document.getElementById('scoringMonth').value = name;
+  populateScoringMonthSelect();
+  loadScoringData();
+  showNotification(`✅ 已创建月份"${name}"`, 'success');
+}
+
+function renderScoringTable() {
+  populateScoringMonthSelect();
+  const container = document.getElementById('scoringTableContainer');
+  const statusArea = document.getElementById('scoringStatusArea');
+  
+  // Show month status
+  const monthName = document.getElementById('scoringMonth').value;
+  if (monthName) {
+    const monthObj = STATE.months.find(m => m.name === monthName);
+    const isLocked = monthObj && monthObj.locked;
+    statusArea.innerHTML = isLocked 
+      ? '<span class="status-badge status-locked">\ud83d\udd12 已提交</span><span style="color:var(--gray-500);font-size:12px;margin-left:8px;">该月份打分已提交，不可修改</span>'
+      : '<span class="status-badge status-draft">\ud83d\udcdd 草稿</span><span style="color:var(--gray-500);font-size:12px;margin-left:8px;">可继续编辑，提交后不可修改</span>';
+    const btnSave = document.getElementById('btnSaveScoring');
+    const btnSubmit = document.getElementById('btnSubmitScoring');
+    if (btnSave) btnSave.disabled = isLocked;
+    if (btnSubmit) btnSubmit.disabled = isLocked;
+  } else {
+    statusArea.innerHTML = '';
+  }
+  
+  // Build combined supplier list from pool + existing data
+  // Filter out disabled suppliers from pool
+  const supplierMap = {};
+  supplierPool.forEach(s => {
+    if (s.disabled) return; // Skip disabled suppliers
+    const key = normalizeName(s.name);
+    if (!supplierMap[key]) supplierMap[key] = { name: s.name, category: s.category };
+  });
+  STATE.months.forEach(m => {
+    m.data.forEach(s => {
+      const key = normalizeName(s.name);
+      if (!supplierMap[key]) supplierMap[key] = { name: s.name, category: s.category };
+    });
+  });
+  
+  const suppliers = Object.values(supplierMap).sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+  
+  if (suppliers.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">✍️</div><div>暂无供应商，请先在"供应商池"中添加或上传考核数据</div></div>';
+    return;
+  }
+  
+  // Load existing data if month is selected
+  const existingData = {};
+  if (monthName) {
+    const month = STATE.months.find(m => m.name === monthName);
+    if (month) {
+      month.data.forEach(s => {
+        existingData[normalizeName(s.name)] = s;
+      });
+    }
+  }
+  
+  // Build scoring rows
+  scoringData = suppliers.map((s, idx) => {
+    const existing = existingData[normalizeName(s.name)];
+    return {
+      index: idx,
+      name: s.name,
+      category: s.category,
+      A: existing ? (existing.A || 0) : 0,
+      B: existing ? (existing.B || 0) : 0,
+      C: existing ? (existing.C || 0) : 0,
+      D: existing ? (existing.D || 0) : 0,
+      a1: existing ? (existing.a1 || 0) : 0,
+      a2: existing ? (existing.a2 || 0) : 0,
+      a3: existing ? (existing.a3 || 0) : 0,
+      a4: existing ? (existing.a4 || 0) : 0,
+      b1: existing ? (existing.b1 || 0) : 0,
+      b2: existing ? (existing.b2 || 0) : 0,
+      b3: existing ? (existing.b3 || 0) : 0,
+      b4: existing ? (existing.b4 || 0) : 0,
+      b5: existing ? (existing.b5 || 0) : 0,
+      c1: existing ? (existing.c1 || 0) : 0,
+      c2: existing ? (existing.c2 || 0) : 0,
+      c3: existing ? (existing.c3 || 0) : 0,
+      d1a: existing ? (existing.d1a || 0) : 0,
+      d1b: existing ? (existing.d1b || 0) : 0,
+      d2a: existing ? (existing.d2a || 0) : 0,
+      d2b: existing ? (existing.d2b || 0) : 0,
+      d2c: existing ? (existing.d2c || 0) : 0,
+      d2d: existing ? (existing.d2d || 0) : 0,
+      d2e: existing ? (existing.d2e || 0) : 0,
+      conclusion: existing ? (existing.conclusion || '') : ''
+    };
+  });
+  
+  renderScoringTableHTML();
+}
+
+function renderScoringTableHTML() {
+  const container = document.getElementById('scoringTableContainer');
+  const monthName = document.getElementById('scoringMonth').value;
+  const monthObj = STATE.months.find(m => m.name === monthName);
+  const isLocked = monthObj && monthObj.locked;
+  const readonlyAttr = isLocked ? 'readonly' : '';
+  
+  // Build double-layer header
+  let html = '<div style="overflow-x:auto;"><table class="scoring-table"><thead>';
+  // Row 1: Group headers
+  html += '<tr>';
+  html += '<th rowspan="2" style="width:40px">序号</th>';
+  html += '<th rowspan="2" style="text-align:left;min-width:160px">供应商名称</th>';
+  html += '<th rowspan="2" style="text-align:left;width:100px">类别</th>';
+  html += '<th colspan="4" class="group-a">A 品质考核（25）</th>';
+  html += '<th rowspan="2" class="group-a">A总分</th>';
+  html += '<th colspan="5" class="group-b">B 成本考核（20）</th>';
+  html += '<th rowspan="2" class="group-b">B总分</th>';
+  html += '<th colspan="3" class="group-c">C 交货考核（20）</th>';
+  html += '<th rowspan="2" class="group-c">C总分</th>';
+  html += '<th colspan="2" style="background:#f3e8ff;color:#7e22ce;border-bottom:1px solid #c4b5fd;">D 产品开发-包材（20）</th>';
+  html += '<th colspan="2" style="background:#e0e7ff;color:#3730a3;border-bottom:1px solid #a5b4fc;">D 产品开发-成品（20）</th>';
+  html += '<th colspan="3" style="background:#ede9fe;color:#6d28d9;border-bottom:1px solid #c4b5fd;">D 业务支持（15）</th>';
+  html += '<th rowspan="2" class="group-d">D总分</th>';
+  html += '<th rowspan="2">总分<span class="scoring-max-hint">满分100</span></th>';
+  html += '<th rowspan="2">等级</th>';
+  html += '<th rowspan="2" style="min-width:140px">会议结论</th>';
+  html += '</tr>';
+  // Row 2: Sub-item headers
+  html += '<tr>';
+  html += '<th class="sub-a">a1验货合格率(7)</th>';
+  html += '<th class="sub-a">a2综合客诉率(8)</th>';
+  html += '<th class="sub-a">a3新品开发质量(5)</th>';
+  html += '<th class="sub-a">a4质量改善完成率(5)</th>';
+  html += '<th class="sub-b">b1价格水平(5)</th>';
+  html += '<th class="sub-b">b2供货周期(4)</th>';
+  html += '<th class="sub-b">b3付款条件(5)</th>';
+  html += '<th class="sub-b">b4报价准确(3)</th>';
+  html += '<th class="sub-b">b5成本支持(3)</th>';
+  html += '<th class="sub-c">c1交货延迟批次(8)</th>';
+  html += '<th class="sub-c">c2交货数量短缺(6)</th>';
+  html += '<th class="sub-c">c3订单交付配合度(6)</th>';
+  html += '<th class="sub-d">d1a包材技术支持(10)</th>';
+  html += '<th class="sub-d">d1b包材技术评估(10)</th>';
+  html += '<th style="background:#eef2ff;color:#3730a3;font-size:11px;">d2a成品技术支持(10)</th>';
+  html += '<th style="background:#eef2ff;color:#3730a3;font-size:11px;">d2b成品技术评估(10)</th>';
+  html += '<th style="background:#f5f3ff;color:#6d28d9;font-size:11px;">d2c研发打样(5)</th>';
+  html += '<th style="background:#f5f3ff;color:#6d28d9;font-size:11px;">d2d业务支持度(5)</th>';
+  html += '<th style="background:#f5f3ff;color:#6d28d9;font-size:11px;">d2e响应配合度(5)</th>';
+  html += '</tr>';
+  html += '</thead><tbody>';
+  
+  // Sub-item field definitions with max values
+  const subFields = [
+    { key: 'a1', max: 7 }, { key: 'a2', max: 8 }, { key: 'a3', max: 5 }, { key: 'a4', max: 5 },
+    { key: 'b1', max: 5 }, { key: 'b2', max: 4 }, { key: 'b3', max: 5 }, { key: 'b4', max: 3 }, { key: 'b5', max: 3 },
+    { key: 'c1', max: 8 }, { key: 'c2', max: 6 }, { key: 'c3', max: 6 },
+    { key: 'd1a', max: 10 }, { key: 'd1b', max: 10 },
+    { key: 'd2a', max: 10 }, { key: 'd2b', max: 10 },
+    { key: 'd2c', max: 5 }, { key: 'd2d', max: 5 }, { key: 'd2e', max: 5 }
+  ];
+  
+  scoringData.forEach((row, i) => {
+    const A = (parseFloat(row.a1)||0) + (parseFloat(row.a2)||0) + (parseFloat(row.a3)||0) + (parseFloat(row.a4)||0);
+    const B = (parseFloat(row.b1)||0) + (parseFloat(row.b2)||0) + (parseFloat(row.b3)||0) + (parseFloat(row.b4)||0) + (parseFloat(row.b5)||0);
+    const C = (parseFloat(row.c1)||0) + (parseFloat(row.c2)||0) + (parseFloat(row.c3)||0);
+    const D = (parseFloat(row.d1a)||0) + (parseFloat(row.d1b)||0) + (parseFloat(row.d2a)||0) + (parseFloat(row.d2b)||0) + (parseFloat(row.d2c)||0) + (parseFloat(row.d2d)||0) + (parseFloat(row.d2e)||0);
+    const total = A + B + C + D;
+    const grade = getGradeFromTotal(total);
+    const gradeLetter = getGradeLetter(grade);
+    const gradeClass = 'grade-' + gradeLetter;
+    
+    // Update scoringData with calculated values
+    row.A = A; row.B = B; row.C = C; row.D = D;
+    
+    html += `<tr>
+      <td>${i + 1}</td>
+      <td class="supplier-name-cell" title="${row.name}">${row.name}</td>
+      <td class="category-cell">${row.category}</td>`;
+    
+    // Sub-item inputs
+    subFields.forEach(sf => {
+      const val = row[sf.key] || 0;
+      html += `<td><input class="scoring-input" type="number" min="0" max="${sf.max}" step="0.1" value="${val}" data-row="${i}" data-field="${sf.key}" onchange="onScoringInput(this)" ${readonlyAttr}></td>`;
+    });
+    
+    // Dimension totals (read-only)
+    html += `<td class="scoring-total" style="background:#eff6ff;color:#1e40af;" id="scoringA_${i}">${A.toFixed(1)}</td>`;
+    html += `<td class="scoring-total" style="background:#fffbeb;color:#92400e;" id="scoringB_${i}">${B.toFixed(1)}</td>`;
+    html += `<td class="scoring-total" style="background:#ecfdf5;color:#065f46;" id="scoringC_${i}">${C.toFixed(1)}</td>`;
+    html += `<td class="scoring-total" style="background:#f5f3ff;color:#5b21b6;" id="scoringD_${i}">${D.toFixed(1)}</td>`;
+    
+    // Total & Grade
+    html += `<td class="scoring-total" id="scoringTotal_${i}">${total.toFixed(1)}</td>`;
+    html += `<td><span class="grade-badge ${gradeClass}" id="scoringGrade_${i}">${grade}</span></td>`;
+    
+    // Conclusion
+    html += `<td><input class="scoring-conclusion-input" type="text" value="${row.conclusion || ''}" data-row="${i}" data-field="conclusion" onchange="onScoringInput(this)" placeholder="选填" ${readonlyAttr}></td>`;
+    
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function onScoringInput(el) {
+  const rowIdx = parseInt(el.dataset.row);
+  const field = el.dataset.field;
+  const val = parseFloat(el.value) || 0;
+  
+  // Max values for sub-items
+  const maxVals = {
+    a1: 7, a2: 8, a3: 5, a4: 5,
+    b1: 5, b2: 4, b3: 5, b4: 3, b5: 3,
+    c1: 8, c2: 6, c3: 6,
+    d1a: 10, d1b: 10, d2a: 10, d2b: 10, d2c: 5, d2d: 5, d2e: 5,
+    A: 25, B: 20, C: 20, D: 35
+  };
+  
+  if (field === 'conclusion') {
+    scoringData[rowIdx].conclusion = el.value;
+    return;
+  }
+  
+  // Validate range for sub-items
+  if (maxVals[field] !== undefined) {
+    if (val < 0) { el.value = 0; scoringData[rowIdx][field] = 0; el.classList.remove('out-of-range'); }
+    else if (val > maxVals[field]) { el.value = maxVals[field]; scoringData[rowIdx][field] = maxVals[field]; el.classList.add('out-of-range'); showNotification(`${field}最高${maxVals[field]}分，已自动修正`, 'error'); }
+    else { scoringData[rowIdx][field] = val; el.classList.remove('out-of-range'); }
+  } else {
+    scoringData[rowIdx][field] = val;
+  }
+  
+  const row = scoringData[rowIdx];
+  
+  // Calculate dimension totals from sub-items
+  const A = (parseFloat(row.a1)||0) + (parseFloat(row.a2)||0) + (parseFloat(row.a3)||0) + (parseFloat(row.a4)||0);
+  const B = (parseFloat(row.b1)||0) + (parseFloat(row.b2)||0) + (parseFloat(row.b3)||0) + (parseFloat(row.b4)||0) + (parseFloat(row.b5)||0);
+  const C = (parseFloat(row.c1)||0) + (parseFloat(row.c2)||0) + (parseFloat(row.c3)||0);
+  const D = (parseFloat(row.d1a)||0) + (parseFloat(row.d1b)||0) + (parseFloat(row.d2a)||0) + (parseFloat(row.d2b)||0) + (parseFloat(row.d2c)||0) + (parseFloat(row.d2d)||0) + (parseFloat(row.d2e)||0);
+  
+  row.A = A; row.B = B; row.C = C; row.D = D;
+  
+  const total = A + B + C + D;
+  const grade = getGradeFromTotal(total);
+  const gradeLetter = getGradeLetter(grade);
+  
+  // Update dimension totals
+  const elA = document.getElementById(`scoringA_${rowIdx}`);
+  const elB = document.getElementById(`scoringB_${rowIdx}`);
+  const elC = document.getElementById(`scoringC_${rowIdx}`);
+  const elD = document.getElementById(`scoringD_${rowIdx}`);
+  if (elA) elA.textContent = A.toFixed(1);
+  if (elB) elB.textContent = B.toFixed(1);
+  if (elC) elC.textContent = C.toFixed(1);
+  if (elD) elD.textContent = D.toFixed(1);
+  
+  // Update total and grade
+  document.getElementById(`scoringTotal_${rowIdx}`).textContent = total.toFixed(1);
+  document.getElementById(`scoringGrade_${rowIdx}`).textContent = grade;
+  document.getElementById(`scoringGrade_${rowIdx}`).className = `grade-badge grade-${gradeLetter}`;
+}
+
+function saveScoringMonth(isSubmit) {
+  const monthName = document.getElementById('scoringMonth').value;
+  if (!monthName) {
+    showNotification('请先选择或新建月份', 'error');
+    return;
+  }
+  
+  // Check if locked
+  const monthObj = STATE.months.find(m => m.name === monthName);
+  if (monthObj && monthObj.locked) {
+    showNotification('该月份已提交，不可修改', 'error');
+    return;
+  }
+  
+  if (scoringData.length === 0) {
+    showNotification('没有可保存的数据', 'error');
+    return;
+  }
+  
+  // For submit: validate supplier count
+  if (isSubmit) {
+    const activePoolCount = supplierPool.filter(s => !s.disabled).length;
+    const scoredCount = scoringData.filter(r => (parseFloat(r.A) || 0) + (parseFloat(r.B) || 0) + (parseFloat(r.C) || 0) + (parseFloat(r.D) || 0) > 0).length;
+    if (scoredCount < activePoolCount) {
+      showNotification(`提交失败：打分供应商数量（${scoredCount}）少于供应商池非禁用供应商数量（${activePoolCount}）`, 'error');
+      return;
+    }
+    if (!confirm(`确认提交"${monthName}"的打分数据？提交后不可修改。`)) return;
+  } else {
+    // Draft save: check if any data
+    const hasData = scoringData.some(r => (parseFloat(r.A) || 0) + (parseFloat(r.B) || 0) + (parseFloat(r.C) || 0) + (parseFloat(r.D) || 0) > 0);
+    if (!hasData) {
+      if (!confirm('所有供应商分数均为0，确定保存吗？')) return;
+    }
+  }
+  
+  // Build data array
+  const newData = [];
+  
+  scoringData.forEach(row => {
+    const A = parseFloat(row.A) || 0;
+    const B = parseFloat(row.B) || 0;
+    const C = parseFloat(row.C) || 0;
+    const D = parseFloat(row.D) || 0;
+    const total = A + B + C + D;
+    const grade = getGradeFromTotal(total);
+    
+    // Preserve existing sub-item data if available
+    const existingMonth = STATE.months.find(m => m.name === monthName);
+    let existingSupplier = null;
+    if (existingMonth) {
+      existingSupplier = existingMonth.data.find(s => normalizeName(s.name) === normalizeName(row.name));
+    }
+    
+    // Include if has scores or was already in the month
+    const wasInMonth = existingMonth && existingMonth.data.some(s => normalizeName(s.name) === normalizeName(row.name));
+    if (total > 0 || wasInMonth) {
+      newData.push({
+        name: row.name,
+        category: row.category,
+        A, B, C, D, total, grade,
+        a1: row.a1 || 0,
+        a2: row.a2 || 0,
+        a3: row.a3 || 0,
+        a4: row.a4 || 0,
+        b1: row.b1 || 0,
+        b2: row.b2 || 0,
+        b3: row.b3 || 0,
+        b4: row.b4 || 0,
+        b5: row.b5 || 0,
+        c1: row.c1 || 0,
+        c2: row.c2 || 0,
+        c3: row.c3 || 0,
+        d1a: row.d1a || 0,
+        d1b: row.d1b || 0,
+        d2a: row.d2a || 0,
+        d2b: row.d2b || 0,
+        d2c: row.d2c || 0,
+        d2d: row.d2d || 0,
+        d2e: row.d2e || 0,
+        conclusion: row.conclusion || '',
+        exceptionQuality: existingSupplier ? (existingSupplier.exceptionQuality || '') : '',
+        exceptionCost: existingSupplier ? (existingSupplier.exceptionCost || '') : '',
+        exceptionDelivery: existingSupplier ? (existingSupplier.exceptionDelivery || '') : '',
+        exceptionServiceProduct: existingSupplier ? (existingSupplier.exceptionServiceProduct || '') : '',
+        exceptionServicePackage: existingSupplier ? (existingSupplier.exceptionServicePackage || '') : '',
+        exceptionOther: existingSupplier ? (existingSupplier.exceptionOther || '') : ''
+      });
+    }
+  });
+  
+  // Update or add month, preserving locked status
+  const existingIdx = STATE.months.findIndex(m => m.name === monthName);
+  const wasLocked = existingIdx >= 0 && STATE.months[existingIdx].locked;
+  const monthData = { name: monthName, data: newData, fileName: monthName + '手动打分', locked: isSubmit ? true : wasLocked };
+  
+  if (existingIdx >= 0) {
+    STATE.months[existingIdx] = monthData;
+  } else {
+    STATE.months.push(monthData);
+  }
+  STATE.monthNames = STATE.months.map(m => m.name);
+  updateAll();
+  
+  if (isSubmit) {
+    showNotification(`🚀 "${monthName}"打分已提交！${newData.length} 个供应商数据已同步到明细数据`, 'success');
+    // Re-render scoring table to show readonly
+    renderScoringTable();
+  } else {
+    showNotification(`✅ 已保存 ${newData.length} 个供应商的打分草稿到"${monthName}"`, 'success');
+  }
+}
+
+function resetScoringForm() {
+  if (!confirm('确定要重置所有打分数据吗？')) return;
+  scoringData.forEach(row => {
+    row.A = 0; row.B = 0; row.C = 0; row.D = 0; row.conclusion = '';
+    row.a1 = 0; row.a2 = 0; row.a3 = 0; row.a4 = 0;
+    row.b1 = 0; row.b2 = 0; row.b3 = 0; row.b4 = 0; row.b5 = 0;
+    row.c1 = 0; row.c2 = 0; row.c3 = 0;
+    row.d1a = 0; row.d1b = 0; row.d2a = 0; row.d2b = 0; row.d2c = 0; row.d2d = 0; row.d2e = 0;
+  });
+  renderScoringTableHTML();
+  showNotification('已重置所有打分', 'success');
+}
+
+function loadScoringData() {
+  const monthName = document.getElementById('scoringMonth').value;
+  if (!monthName) {
+    document.getElementById('scoringTableContainer').innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>请选择或新建月份后开始打分</div></div>';
+    document.getElementById('scoringStatusArea').innerHTML = '';
+    return;
+  }
+  renderScoringTable();
+}
+
+function importScoringFromExcel(input) {
+  if (!input.files || input.files.length === 0) return;
+  const monthName = document.getElementById('scoringMonth').value;
+  if (!monthName) {
+    showNotification('请先选择或新建月份再导入', 'error');
+    input.value = '';
+    return;
+  }
+  
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      // Try to find the scoring sheet
+      let ws = null;
+      let sheetName = '';
+      for (const sn of wb.SheetNames) {
+        if (sn.includes('打分') || sn.includes('汇总') || sn.includes('考核')) {
+          ws = wb.Sheets[sn];
+          sheetName = sn;
+          break;
+        }
+      }
+      if (!ws) {
+        ws = wb.Sheets[wb.SheetNames[0]];
+        sheetName = wb.SheetNames[0];
+      }
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      
+      // Detect format: full template or simplified
+      // Full template has sub-item headers in rows 0-2
+      // Simplified has just: 序号, 供应商名称, 类别, A总分, B总分, C总分, D总分, 总分, 等级
+      let isFullTemplate = false;
+      // Check if row 0 or 1 contains sub-item markers like 'a1' or '验货合格率'
+      for (let r = 0; r < Math.min(3, rows.length); r++) {
+        const rowStr = rows[r].join('|').toLowerCase();
+        if (rowStr.includes('验货') || rowStr.includes('客诉') || rowStr.includes('a1') || rowStr.includes('价格水平')) {
+          isFullTemplate = true;
+          break;
+        }
+      }
+      
+      // Find data start row
+      let dataStart = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const cell0 = String(row[0] || '').trim();
+        const cell1 = String(row[1] || '').trim();
+        // Data rows start with a number (序号) followed by a supplier name
+        if (cell0 && !isNaN(parseInt(cell0)) && parseInt(cell0) > 0 && cell1 && cell1 !== '供应商名称') {
+          dataStart = i;
+          break;
+        }
+      }
+      
+      let imported = 0;
+      for (let i = dataStart; i < rows.length; i++) {
+        const row = rows[i];
+        
+        // Try to detect name column
+        let nameCol = 1; // Default: column 1 (second column)
+        let name = String(row[nameCol] || '').trim();
+        if (!name || name === '供应商名称') {
+          // Try column 0
+          name = String(row[0] || '').trim();
+          nameCol = 0;
+        }
+        if (!name) continue;
+        // Skip if it looks like a header
+        if (name.includes('供应商') && name.includes('名称')) continue;
+        
+        const categoryCol = nameCol + 1;
+        const category = String(row[categoryCol] || '').trim() || '未分类';
+        
+        let A, B, C, D, total, grade;
+        let a1=0,a2=0,a3=0,a4=0,b1=0,b2=0,b3=0,b4=0,b5=0,c1=0,c2=0,c3=0;
+        let d1a=0,d1b=0,d2a=0,d2b=0,d2c=0,d2d=0,d2e=0;
+        let conclusion = '';
+        
+        if (isFullTemplate) {
+          // Full template format: cols match the standard template
+          // 0=序号, 1=名称, 2=类别, 3=总分, 4=等级
+          // A: 5=a1, 6=a2, 7=a3, 8=a4, 9=A总分
+          // B: 10=b1, 11=b2, 12=b3, 13=b4, 14=b5, 15=B总分
+          // C: 16=c1, 17=c2, 18=c3, 19=C总分  (but in the template, there might be an extra "A 成本考核(15)" column)
+          // Actually from the template analysis: 
+          // Col 0=序号, 1=名称, 2=类别, 3=总分, 4=等级
+          // Col 5-8: a1-a4, Col 9: A总分
+          // Col 10-14: b1-b5, Col 15: B总分
+          // Col 16: (可能是额外的A成本考核列), Col 17-19: c1-c3 (with offset), Col 20: C总分
+          // Let me use a more flexible approach based on actual header detection
+          
+          // Use column position based on the known template structure
+          // From the Excel analysis: 
+          // 0=序号 1=供应商名称 2=供应商类别 3=总分 4=供应商等级
+          // 5=a1(验货合格率7) 6=a2(客诉率8) 7=a3(新品5) 8=a4(改善5) 9=A总分
+          // 10=b1(价格5) 11=b2(周期4) 12=b3(付款5) 13=b4(报价3) 14=b5(成本3) 15=B总分
+          // 16=(额外列-A成本考核15) 
+          // 17=c1(延迟8) 18=c2(短缺6) 19=c3(配合6) 20=C总分
+          // 21=d1a(包材技术10) 22=d1b(包材评估10) 23=d2a(配方技术10) 24=d2b(配方评估10) 25=d2c(研发5) 26=d2d(业务5) 27=d2e(响应5) 28=D总分
+          // 29=会议结论/异常原因分析 etc.
+          
+          a1 = parseFloat(row[5]) || 0;
+          a2 = parseFloat(row[6]) || 0;
+          a3 = parseFloat(row[7]) || 0;
+          a4 = parseFloat(row[8]) || 0;
+          A = parseFloat(row[9]) || (a1 + a2 + a3 + a4);
+          
+          b1 = parseFloat(row[10]) || 0;
+          b2 = parseFloat(row[11]) || 0;
+          b3 = parseFloat(row[12]) || 0;
+          b4 = parseFloat(row[13]) || 0;
+          b5 = parseFloat(row[14]) || 0;
+          B = parseFloat(row[15]) || (b1 + b2 + b3 + b4 + b5);
+          
+          // Column 16 might be an extra column, try C sub-items starting from 17
+          c1 = parseFloat(row[17]) || 0;
+          c2 = parseFloat(row[18]) || 0;
+          c3 = parseFloat(row[19]) || 0;
+          C = parseFloat(row[20]) || (c1 + c2 + c3);
+          
+          // If C values look wrong (all zeros), try alternate column positions
+          if (C === 0 && c1 === 0 && c2 === 0 && c3 === 0) {
+            c1 = parseFloat(row[16]) || 0;
+            c2 = parseFloat(row[17]) || 0;
+            c3 = parseFloat(row[18]) || 0;
+            C = parseFloat(row[19]) || (c1 + c2 + c3);
+            // Adjust D columns accordingly
+            d1a = parseFloat(row[20]) || 0;
+            d1b = parseFloat(row[21]) || 0;
+            d2a = parseFloat(row[22]) || 0;
+            d2b = parseFloat(row[23]) || 0;
+            d2c = parseFloat(row[24]) || 0;
+            d2d = parseFloat(row[25]) || 0;
+            d2e = parseFloat(row[26]) || 0;
+            D = parseFloat(row[27]) || (d1a + d1b + d2a + d2b + d2c + d2d + d2e);
+            conclusion = String(row[28] || '').trim();
+          } else {
+            d1a = parseFloat(row[21]) || 0;
+            d1b = parseFloat(row[22]) || 0;
+            d2a = parseFloat(row[23]) || 0;
+            d2b = parseFloat(row[24]) || 0;
+            d2c = parseFloat(row[25]) || 0;
+            d2d = parseFloat(row[26]) || 0;
+            d2e = parseFloat(row[27]) || 0;
+            D = parseFloat(row[28]) || (d1a + d1b + d2a + d2b + d2c + d2d + d2e);
+            conclusion = String(row[29] || '').trim();
+          }
+          
+          total = parseFloat(row[3]) || (A + B + C + D);
+          grade = String(row[4] || getGradeFromTotal(total)).trim();
+        } else {
+          // Simplified format: 序号, 名称, 类别, A总分, B总分, C总分, D总分, [总分], [等级]
+          A = parseFloat(row[nameCol + 2]) || 0;
+          B = parseFloat(row[nameCol + 3]) || 0;
+          C = parseFloat(row[nameCol + 4]) || 0;
+          D = parseFloat(row[nameCol + 5]) || 0;
+          total = A + B + C + D;
+          grade = getGradeFromTotal(total);
+        }
+        
+        // Find or create scoring row
+        const normName = normalizeName(name);
+        let scoringRow = scoringData.find(r => normalizeName(r.name) === normName);
+        if (!scoringRow) {
+          scoringRow = { index: scoringData.length, name, category, A: 0, B: 0, C: 0, D: 0, conclusion: '', a1:0,a2:0,a3:0,a4:0,b1:0,b2:0,b3:0,b4:0,b5:0,c1:0,c2:0,c3:0,d1a:0,d1b:0,d2a:0,d2b:0,d2c:0,d2d:0,d2e:0 };
+          scoringData.push(scoringRow);
+        }
+        scoringRow.A = A;
+        scoringRow.B = B;
+        scoringRow.C = C;
+        scoringRow.D = D;
+        scoringRow.a1 = a1; scoringRow.a2 = a2; scoringRow.a3 = a3; scoringRow.a4 = a4;
+        scoringRow.b1 = b1; scoringRow.b2 = b2; scoringRow.b3 = b3; scoringRow.b4 = b4; scoringRow.b5 = b5;
+        scoringRow.c1 = c1; scoringRow.c2 = c2; scoringRow.c3 = c3;
+        scoringRow.d1a = d1a; scoringRow.d1b = d1b;
+        scoringRow.d2a = d2a; scoringRow.d2b = d2b; scoringRow.d2c = d2c; scoringRow.d2d = d2d; scoringRow.d2e = d2e;
+        scoringRow.conclusion = conclusion;
+        imported++;
+      }
+      
+      renderScoringTableHTML();
+      showNotification(`✅ 已从Excel导入 ${imported} 个供应商的打分数据${isFullTemplate ? '（含子项明细）' : ''}`, 'success');
+    } catch (err) {
+      showNotification('导入失败: ' + err.message, 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ========== Export Scoring Template ==========
+function exportScoringTemplate() {
+  try {
+    if (typeof XLSX === 'undefined') {
+      showNotification('Excel组件加载失败，请刷新页面后重试', 'error');
+      return;
+    }
+    
+    const monthName = document.getElementById('scoringMonth').value;
+    if (!monthName) {
+      showNotification('请先选择月份再导出', 'error');
+      return;
+    }
+    
+    // Get non-disabled suppliers from pool
+    const activePool = supplierPool.filter(s => !s.disabled);
+    
+    // Build existing data map
+    const monthObj = STATE.months.find(m => m.name === monthName);
+    const existingMap = {};
+    if (monthObj) {
+      monthObj.data.forEach(s => {
+        existingMap[normalizeName(s.name)] = s;
+      });
+    }
+    
+    // Also include suppliers from scoringData
+    scoringData.forEach(r => {
+      const norm = normalizeName(r.name);
+      if (!existingMap[norm]) {
+        existingMap[norm] = r;
+      }
+    });
+    
+    // Double-layer header matching scoring table format
+    const headerRow1 = ['序号', '供应商名称', '供应商类别',
+      'A 品质考核（25）', '', '', '', 'A总分',
+      'B 成本考核（20）', '', '', '', '', 'B总分',
+      'C 交货考核（20）', '', '', 'C总分',
+      'D 产品开发-包材（20）', '',
+      'D 产品开发-成品（20）', '',
+      'D 业务支持（15）', '', '',
+      'D总分', '总分', '供应商等级', '会议结论'];
+    const headerRow2 = ['', '', '',
+      'a1验货合格率(7)', 'a2综合客诉率(8)', 'a3新品开发质量(5)', 'a4质量改善完成率(5)', '',
+      'b1价格水平(5)', 'b2供货周期(4)', 'b3付款条件(5)', 'b4报价准确(3)', 'b5成本支持(3)', '',
+      'c1交货延迟批次(8)', 'c2交货数量短缺(6)', 'c3订单交付配合度(6)', '',
+      'd1a包材技术支持(10)', 'd1b包材技术评估(10)',
+      'd2a成品技术支持(10)', 'd2b成品技术评估(10)',
+      'd2c研发打样(5)', 'd2d业务支持度(5)', 'd2e响应配合度(5)',
+      '', '', '', ''];
+    
+    const dataRows = [headerRow1, headerRow2];
+    
+    // Export all active pool suppliers (even those without scores)
+    const allSuppliers = [];
+    const addedNames = new Set();
+    
+    // First add active pool suppliers
+    activePool.forEach((s, i) => {
+      allSuppliers.push({ name: s.name, category: s.category });
+      addedNames.add(normalizeName(s.name));
+    });
+    
+    // Then add any scoring data suppliers not in pool
+    scoringData.forEach(r => {
+      const norm = normalizeName(r.name);
+      if (!addedNames.has(norm)) {
+        allSuppliers.push({ name: r.name, category: r.category });
+        addedNames.add(norm);
+      }
+    });
+    
+    allSuppliers.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+    
+    allSuppliers.forEach((s, i) => {
+      const norm = normalizeName(s.name);
+      const d = existingMap[norm];
+      if (d) {
+        const A = (d.a1||0) + (d.a2||0) + (d.a3||0) + (d.a4||0);
+        const B = (d.b1||0) + (d.b2||0) + (d.b3||0) + (d.b4||0) + (d.b5||0);
+        const C = (d.c1||0) + (d.c2||0) + (d.c3||0);
+        const D = (d.d1a||0) + (d.d1b||0) + (d.d2a||0) + (d.d2b||0) + (d.d2c||0) + (d.d2d||0) + (d.d2e||0);
+        const total = (d.total !== undefined) ? d.total : (A + B + C + D);
+        const grade = d.grade || getGradeFromTotal(total);
+        dataRows.push([
+          i + 1, s.name, s.category,
+          d.a1||0, d.a2||0, d.a3||0, d.a4||0, d.A||A,
+          d.b1||0, d.b2||0, d.b3||0, d.b4||0, d.b5||0, d.B||B,
+          d.c1||0, d.c2||0, d.c3||0, d.C||C,
+          d.d1a||0, d.d1b||0, d.d2a||0, d.d2b||0, d.d2c||0, d.d2d||0, d.d2e||0, d.D||D,
+          total, grade, d.conclusion || ''
+        ]);
+      } else {
+        // Empty row for user to fill
+        dataRows.push([i + 1, s.name, s.category,
+          '', '', '', '', '',
+          '', '', '', '', '', '',
+          '', '', '', '',
+          '', '', '', '', '', '', '', '',
+          '', '', '']);
+      }
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(dataRows);
+    // Apply merges for group headers
+    ws['!merges'] = [
+      {s:{r:0,c:3},e:{r:0,c:6}},   // A 品质考核（25）
+      {s:{r:0,c:7},e:{r:1,c:7}},   // A总分
+      {s:{r:0,c:8},e:{r:0,c:12}},  // B 成本考核（20）
+      {s:{r:0,c:13},e:{r:1,c:13}}, // B总分
+      {s:{r:0,c:14},e:{r:0,c:16}}, // C 交货考核（20）
+      {s:{r:0,c:17},e:{r:1,c:17}}, // C总分
+      {s:{r:0,c:18},e:{r:0,c:19}}, // D 产品开发-包材（20）
+      {s:{r:0,c:20},e:{r:0,c:21}}, // D 产品开发-成品（20）
+      {s:{r:0,c:22},e:{r:0,c:24}}, // D 业务支持（15）
+      {s:{r:0,c:25},e:{r:1,c:25}}, // D总分
+      {s:{r:0,c:0},e:{r:1,c:0}},   // 序号
+      {s:{r:0,c:1},e:{r:1,c:1}},   // 供应商名称
+      {s:{r:0,c:2},e:{r:1,c:2}},   // 供应商类别
+      {s:{r:0,c:26},e:{r:1,c:26}}, // 总分
+      {s:{r:0,c:27},e:{r:1,c:27}}, // 供应商等级
+      {s:{r:0,c:28},e:{r:1,c:28}}, // 会议结论
+    ];
+    ws['!cols'] = [
+      {wch:5},{wch:30},{wch:15},
+      {wch:10},{wch:10},{wch:10},{wch:10},{wch:8},
+      {wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:8},
+      {wch:10},{wch:10},{wch:10},{wch:8},
+      {wch:12},{wch:12},{wch:12},{wch:12},{wch:10},{wch:10},{wch:10},{wch:8},
+      {wch:8},{wch:14},{wch:20}
+    ];
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '汇总-打分细则');
+    XLSX.writeFile(wb, `供应商绩效考核打分模板-${monthName}.xlsx`);
+    showNotification(`✅ 已导出 ${allSuppliers.length} 个供应商的打分模板`, 'success');
+  } catch (err) {
+    showNotification('导出失败: ' + err.message, 'error');
+  }
+}
+
+// ========== Event Handlers ==========
+function initEvents() {
+  // File upload
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+  
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      // Re-render charts after layout settles
+      setTimeout(() => {
+        if (tab.dataset.tab === 'overview') { updateTrendChart(); updateGradeChart(); updateGradeCountTable(); updateDimAvgChart(); }
+        if (tab.dataset.tab === 'compare') { updateCompareFilters(); updateRadarChart(); updateHeatmapChart(); }
+        if (tab.dataset.tab === 'pool') { renderSupplierPool(); }
+        if (tab.dataset.tab === 'scoring') { renderScoringTable(); }
+        // Force resize all chart instances after render
+        setTimeout(() => {
+          [trendChartInstance, gradeChartInstance, dimAvgChartInstance, radarChartInstance, heatmapChartInstance].forEach(c => {
+            if (c) c.resize();
+          });
+        }, 50);
+      }, 150);
+    });
+  });
+  
+  // Stats month selector
+  document.getElementById('statsMonth').addEventListener('change', updateStats);
+  
+  // Filter changes
+  // trendCategory and trendMetric are now multi-select dropdowns, handled by their own click handlers
+  document.getElementById('compareCategory').addEventListener('change', () => { updateCompareSuppliers(); updateRadarChart(); updateHeatmapChart(); });
+  document.getElementById('rankMonth1').addEventListener('change', updateRankTable);
+  document.getElementById('rankMonth2').addEventListener('change', updateRankTable);
+  document.getElementById('rankGrade').addEventListener('change', updateRankTable);
+  document.getElementById('rankSearch').addEventListener('input', updateRankTable);
+  document.getElementById('detailMonth').addEventListener('change', updateDetailTable);
+  document.getElementById('detailGrade').addEventListener('change', updateDetailTable);
+  document.getElementById('detailSearch').addEventListener('input', updateDetailTable);
+  
+  // Window resize - debounced for performance
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      [trendChartInstance, gradeChartInstance, dimAvgChartInstance, radarChartInstance, heatmapChartInstance].forEach(c => {
+        if (c) c.resize();
+      });
+      // Re-render charts with dynamic sizing
+      const comparePanel = document.getElementById('panel-compare');
+      if (comparePanel.classList.contains('active')) {
+        updateRadarChart();
+        updateHeatmapChart();
+      }
+    }, 200);
+  });
+}
+
+function handleFiles(files) {
+  if (!files || files.length === 0) return;
+  
+  showLoading(true);
+  let processed = 0;
+  const total = files.length;
+  
+  Array.from(files).forEach(file => {
+    parseMonthExcel(file, (err, result) => {
+      processed++;
+      if (err) {
+        showNotification(`解析 ${file.name} 失败: ${err.message}`, 'error');
+      } else if (result && result.data.length > 0) {
+        addMonth(result);
+        showNotification(`✅ ${result.name}数据已加载（${result.data.length}家供应商）`, 'success');
+      } else {
+        showNotification(`未能从 ${file.name} 中解析到数据`, 'error');
+      }
+      
+      if (processed === total) {
+        showLoading(false);
+      }
+    });
+  });
+}
+
+function showLoading(show) {
+  document.getElementById('loading').classList.toggle('hidden', !show);
+}
+
+function showNotification(msg, type) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.className = 'notification ' + type + ' show';
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ========== Load Initial Data ==========
+function loadInitialData() {
+  // Built-in data for March, April, May
+  const marchData = [
+    {name:'苏州清馨健康科技有限公司',category:'牙膏/漱口水',total:92,grade:'A级（优秀）',A:23,B:18,C:19,D:32,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'淮安纵横生物科技有限公司淮阴分公司',category:'漱口水/口喷',total:83,grade:'B级（良好）',A:13,B:18,C:20,D:32,a1:7,a2:2,a3:3,a4:1,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'赛维泰(广州)健康药业有限公司',category:'漱口水',total:86,grade:'A级（优秀）',A:23,B:13,C:20,D:30,a1:7,a2:8,a3:3,a4:5,b1:3,b2:3,b3:1,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:9,d2b:9,d2c:4,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'淮安幸福草科技有限公司',category:'牙刷',total:88,grade:'A级（优秀）',A:25,B:15,C:20,D:28,a1:7,a2:8,a3:5,a4:5,b1:5,b2:4,b3:1,b4:3,b5:2,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:7,d2b:8,d2c:3,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'广东刷博士科技有限公司',category:'牙刷',total:67,grade:'C级（合格）',A:17,B:13,C:16,D:21,a1:7,a2:8,a3:5,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'江苏华腾个人护理用品有限公司',category:'便携装',total:89,grade:'A级（优秀）',A:23,B:15,C:19,D:32,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'或寰科技江苏有限公司',category:'牙线',total:86,grade:'A级（优秀）',A:23,B:10,C:20,D:33,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'艾利美塑胶',category:'软管',total:80,grade:'B级（良好）',A:16,B:16,C:18,D:30,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'瑞高包装',category:'软管',total:71,grade:'C级（合格）',A:16,B:13,C:16,D:26,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'苏州利鹏塑胶有限公司',category:'软管',total:74,grade:'C级（合格）',A:16,B:15,C:14,D:29,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'中山鑫润包装制品有限公司',category:'注塑/吹瓶',total:71,grade:'C级（合格）',A:17,B:13,C:18,D:23,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'杭州三晶工艺',category:'玻璃瓶',total:83,grade:'B级（良好）',A:21,B:15,C:20,D:27,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'苏州上印',category:'花盒/礼盒',total:78,grade:'B级（良好）',A:23,B:15,C:13,D:27,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'东莞市奥科希塑胶有限公司',category:'硅胶',total:80,grade:'B级（良好）',A:16,B:14,C:20,D:30,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'东莞市宸兴硅塑胶制品有限公司',category:'硅胶',total:80,grade:'B级（良好）',A:16,B:14,C:20,D:30,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'常州市恒成达印刷有限公司',category:'标签',total:75,grade:'C级（合格）',A:16,B:12,C:20,D:27,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'佛山印得高印刷有限公司',category:'标签',total:81,grade:'B级（良好）',A:17,B:15,C:20,D:29,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'上海浅月',category:'标签',total:92,grade:'A级（优秀）',A:23,B:17,C:19,D:33,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'以责实业(上海)有限公司',category:'周边品',total:60,grade:'C级（合格）',A:21,B:0,C:0,D:0,a1:7,a2:8,a3:3,a4:5,b1:0,b2:0,b3:0,b4:0,b5:0,c1:0,c2:0,c3:0,d1a:0,d1b:0,d2a:0,d2b:0,d2c:0,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'无锡腾达展示用品有限公司',category:'周边品',total:60,grade:'C级（合格）',A:16,B:0,C:0,D:0,a1:7,a2:8,a3:3,a4:5,b1:0,b2:0,b3:0,b4:0,b5:0,c1:0,c2:0,c3:0,d1a:0,d1b:0,d2a:0,d2b:0,d2c:0,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''}
+  ];
+  
+  const aprilData = [
+    {name:'苏州清馨健康科技有限公司',category:'牙膏/漱口水',total:87,grade:'A级（优秀）',A:23,B:18,C:17,D:29,a1:7,a2:8,a3:5,a4:3,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:8,d2c:3,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'淮安纵横生物科技有限公司淮阴分公司',category:'漱口水/口喷',total:79.5,grade:'B级（良好）',A:7.5,B:18,C:20,D:34,a1:1,a2:4,a3:2.5,a4:0,b1:3,b2:4,b3:5,b4:3,b5:3,c1:8,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'赛维泰(广州)健康药业有限公司',category:'漱口水',total:82,grade:'B级（良好）',A:19,B:15,C:13,D:35,a1:5,a2:8,a3:3,a4:3,b1:5,b2:3,b3:1,b4:3,b5:3,c1:5,c2:4,c3:4,d1a:0,d1b:0,d2a:10,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'淮安幸福草科技有限公司',category:'牙刷',total:89,grade:'A级（优秀）',A:21,B:18,C:17,D:33,a1:7,a2:6,a3:3,a4:5,b1:5,b2:4,b3:3,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:8,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'广东刷博士科技有限公司',category:'牙刷',total:57,grade:'D级（不合格）',A:14,B:9,C:13,D:21,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'江苏华腾个人护理用品有限公司',category:'便携装/牙刷',total:83,grade:'B级（良好）',A:15,B:16,C:17,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'或寰科技江苏有限公司',category:'牙线',total:87,grade:'A级（优秀）',A:21,B:14,C:17,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'艾利美塑胶',category:'软管',total:78,grade:'B级（良好）',A:19,B:15,C:12,D:32,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'瑞高包装',category:'软管',total:83,grade:'B级（良好）',A:19,B:15,C:18,D:31,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'苏州利鹏塑胶有限公司',category:'软管',total:76,grade:'B级（良好）',A:19,B:15,C:14,D:28,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'新长城',category:'软管',total:87,grade:'A级（优秀）',A:25,B:15,C:18,D:29,a1:7,a2:8,a3:5,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:6,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'中山鑫润包装制品有限公司',category:'注塑/吹瓶',total:57,grade:'D级（不合格）',A:9,B:9,C:17,D:22,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'杭州三晶工艺',category:'玻璃瓶/口喷盖子',total:78,grade:'B级（良好）',A:21,B:12,C:16,D:29,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'苏州上印',category:'花盒/礼盒',total:75,grade:'C级（合格）',A:21,B:12,C:20,D:22,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'东莞市奥科希塑胶有限公司',category:'硅胶',total:78,grade:'B级（良好）',A:17,B:15,C:13,D:33,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'东莞市宸兴硅塑胶制品有限公司',category:'硅胶',total:81,grade:'B级（良好）',A:17,B:13,C:20,D:31,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'常州市恒成达印刷有限公司',category:'标签',total:77,grade:'C级（合格）',A:17,B:12,C:20,D:28,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'佛山印得高印刷有限公司',category:'标签',total:83,grade:'B级（良好）',A:17,B:15,C:20,D:31,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'上海浅月',category:'标签',total:90,grade:'A级（优秀）',A:21,B:16,C:19,D:34,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'无锡腾达展示用品有限公司',category:'周边品',total:89,grade:'A级（优秀）',A:17,B:19,C:18,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:6,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'上海轼以实业有限公司',category:'周边品',total:83,grade:'B级（良好）',A:14,B:18,C:19,D:32,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''}
+  ];
+  
+  const mayData = [
+    {name:'苏州清馨健康科技有限公司',category:'牙膏/漱口水',total:88,grade:'A级（优秀）',A:21,B:18,C:17,D:32,a1:7,a2:8,a3:3,a4:3,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:10,d2c:4,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'淮安纵横生物科技有限公司淮阴分公司',category:'漱口水/口喷',total:87,grade:'A级（优秀）',A:17,B:18,C:17,D:35,a1:5,a2:6,a3:3,a4:3,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'赛维泰（广州）健康药业有限公司',category:'漱口水',total:76,grade:'B级（良好）',A:15,B:13,C:13,D:35,a1:4.2,a2:4.8,a3:3,a4:3,b1:3,b2:3,b3:1,b4:3,b5:3,c1:5,c2:4,c3:4,d1a:0,d1b:0,d2a:10,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'复晳药业（上海）有限公司',category:'漱口水',total:83,grade:'B级（良好）',A:16,B:15,C:17,D:35,a1:2,a2:8,a3:3,a4:3,b1:5,b2:3,b3:1,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'淮安幸福草科技有限公司',category:'牙刷',total:90,grade:'A级（优秀）',A:19,B:18,C:20,D:33,a1:7,a2:6,a3:3,a4:3,b1:5,b2:4,b3:3,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:10,d2b:8,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'广东刷博士科技有限公司',category:'牙刷',total:57,grade:'D级（不合格）',A:15,B:9,C:13,D:20,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'江苏华腾个人护理用品有限公司',category:'便携装/牙刷',total:79,grade:'B级（良好）',A:11,B:16,C:17,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'彧寰科技江苏有限公司',category:'牙线',total:87.8,grade:'A级（优秀）',A:17.8,B:15,C:20,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'艾利美塑胶',category:'软管',total:75,grade:'C级（合格）',A:15,B:15,C:12,D:33,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'瑞高包装',category:'软管',total:80,grade:'B级（良好）',A:15,B:15,C:18,D:32,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:6,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'新长城',category:'软管',total:79,grade:'B级（良好）',A:15,B:16,C:18,D:30,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:6,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'中山鑫润包装制品有限公司',category:'注塑/吹瓶',total:65.8,grade:'C级（合格）',A:10.8,B:10,C:16,D:29,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'杭州三晶工艺塑料有限公司',category:'玻璃瓶/口喷盖子',total:78,grade:'B级（良好）',A:15,B:12,C:20,D:31,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'苏州上印',category:'花盒/礼盒',total:75,grade:'C级（合格）',A:15,B:12,C:20,D:28,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'东莞市奥科希塑胶有限公司',category:'硅胶',total:74,grade:'C级（合格）',A:15,B:16,C:13,D:30,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'东莞市宸兴硅塑胶制品有限公司',category:'硅胶',total:72,grade:'C级（合格）',A:15,B:13,C:13,D:31,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'常州市恒成达印刷有限公司',category:'标签',total:75,grade:'C级（合格）',A:15,B:12,C:20,D:28,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'佛山市印得高印刷有限公司',category:'标签',total:81,grade:'B级（良好）',A:15,B:15,C:20,D:31,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'上海浅月印刷包装有限公司',category:'标签',total:84,grade:'B级（良好）',A:15,B:17,C:17,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:5,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'无锡腾达展示用品有限公司',category:'周边品',total:88,grade:'A级（优秀）',A:15,B:19,C:19,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''},
+    {name:'上海轼以实业有限公司',category:'周边品',total:89,grade:'A级（优秀）',A:15,B:19,C:20,D:35,a1:7,a2:8,a3:3,a4:5,b1:3,b2:4,b3:5,b4:3,b5:3,c1:7,c2:6,c3:6,d1a:0,d1b:0,d2a:8,d2b:10,d2c:5,conclusion:'',exceptionQuality:'',exceptionCost:'',exceptionDelivery:'',exceptionServiceProduct:'',exceptionServicePackage:'',exceptionOther:''}
+  ];
+  
+  // Fix D scores - D total is at column index 26 which I mapped to D
+  // Actually looking at the original data, D column was showing wrong values
+  // Let me fix: the D total should be calculated from the raw data
+  // From the Excel: D总分 is at column 26
+  
+  // Re-parse the initial data with correct D values from the analysis logic file
+  const analysisD = {
+    '苏州清馨健康科技有限公司': {3:32, 4:29, 5:32},
+    '淮安纵横生物科技有限公司淮阴分公司': {3:32, 4:34, 5:35},
+    '赛维泰(广州)健康药业有限公司': {3:30, 4:35, 5:35},
+    '赛维泰（广州）健康药业有限公司': {3:30, 4:35, 5:35},
+    '复晳药业（上海）有限公司': {5:35},
+    '淮安幸福草科技有限公司': {3:28, 4:33, 5:33},
+    '广东刷博士科技有限公司': {3:21, 4:21, 5:20},
+    '江苏华腾个人护理用品有限公司': {3:32, 4:35, 5:35},
+    '或寰科技江苏有限公司': {3:33, 4:35, 5:35},
+    '彧寰科技江苏有限公司': {5:35},
+    '艾利美塑胶': {3:30, 4:32, 5:33},
+    '瑞高包装': {3:26, 4:31, 5:32},
+    '苏州利鹏塑胶有限公司': {3:29, 4:28, 5:null},
+    '新长城': {4:29, 5:30},
+    '中山鑫润包装制品有限公司': {3:23, 4:22, 5:29},
+    '杭州三晶工艺': {3:27, 4:29, 5:null},
+    '杭州三晶工艺塑料有限公司': {5:31},
+    '苏州上印': {3:27, 4:22, 5:28},
+    '东莞市奥科希塑胶有限公司': {3:30, 4:33, 5:30},
+    '东莞市宸兴硅塑胶制品有限公司': {3:30, 4:31, 5:31},
+    '常州市恒成达印刷有限公司': {3:27, 4:28, 5:28},
+    '佛山印得高印刷有限公司': {3:29, 4:31, 5:31},
+    '佛山市印得高印刷有限公司': {5:31},
+    '上海浅月': {3:33, 4:34, 5:null},
+    '上海浅月印刷包装有限公司': {5:35},
+    '以责实业(上海)有限公司': {3:0},
+    '无锡腾达展示用品有限公司': {3:0, 4:35, 5:35},
+    '上海轼以实业有限公司': {4:32, 5:35},
+  };
+  
+  function fixD(data, monthKey) {
+    data.forEach(s => {
+      const lookup = analysisD[s.name];
+      if (lookup && lookup[monthKey] !== undefined && lookup[monthKey] !== null) {
+        s.D = lookup[monthKey];
+        // Recalculate total
+        s.total = s.A + s.B + s.C + s.D;
+      }
+    });
+  }
+  
+  fixD(marchData, 3);
+  fixD(aprilData, 4);
+  fixD(mayData, 5);
+  
+  addMonth({ name: '3月', data: marchData, fileName: '3月考核' });
+  addMonth({ name: '4月', data: aprilData, fileName: '4月考核' });
+  addMonth({ name: '5月', data: mayData, fileName: '5月考核' });
+}
+
+// ========== Init ==========
+document.addEventListener('DOMContentLoaded', () => {
+  loadSupplierPool();
+  initEvents();
+  loadInitialData();
+});
+
+// Close pool modal on overlay click
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('poolModal');
+  if (e.target === modal) closePoolModal();
+});
+// Close pool modal and dropdowns on ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closePoolModal();
+    closeTrendDropdown();
+    closeCompareDropdown();
+  }
+});
+</script>
+</body>
+</html>
