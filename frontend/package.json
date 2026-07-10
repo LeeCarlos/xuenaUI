@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:report": "eslint . -f json -o eslint-report.json",
     "preview": "vite preview"
   },
   "dependencies": {

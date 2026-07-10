@@ -15,7 +15,6 @@ com\xuena\supplier\controller\SupplierController.class
 com\xuena\supplier\SupplierApplication.class
 com\xuena\supplier\vo\ResultVO.class
 com\xuena\supplier\config\SecurityConfig.class
-com\xuena\supplier\config\EasyExcelConfig.class
 com\xuena\supplier\config\MyBatisConfig.class
 com\xuena\supplier\controller\CategoryController.class
 com\xuena\supplier\service\CategoryService.class
@@ -59,7 +58,6 @@ com\xuena\supplier\entity\RoleDO.class
 com\xuena\supplier\service\DepartmentScoreService.class
 com\xuena\supplier\vo\response\LoginResponse$UserInfo.class
 com\xuena\supplier\mapper\RoleMenuMapper.class
-com\xuena\supplier\config\EasyExcelConfig$1.class
 com\xuena\supplier\controller\UploadController.class
 com\xuena\supplier\entity\RoleMenuDO.class
 com\xuena\supplier\service\MeetingNoteService.class

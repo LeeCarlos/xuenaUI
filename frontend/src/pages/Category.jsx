@@ -9,18 +9,18 @@ export default function Category() {
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
   const fetchData = async () => {
     try {
       const res = await categoryService.list()
       setData(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取品类列表失败')
     }
   }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const handleAdd = () => {
     form.resetFields()
@@ -39,7 +39,7 @@ export default function Category() {
       await categoryService.delete(id)
       message.success('删除成功')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('删除失败')
     }
   }

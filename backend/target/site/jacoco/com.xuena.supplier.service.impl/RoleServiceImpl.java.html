@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">supplier-performance</a> &gt; <a href="index.source.html" class="el_package">com.xuena.supplier.service.impl</a> &gt; <span class="el_source">RoleServiceImpl.java</span></div><h1>RoleServiceImpl.java</h1><pre class="source lang-java linenums">package com.xuena.supplier.service.impl;
+
+import com.xuena.supplier.entity.RoleDO;
+import com.xuena.supplier.exception.BusinessException;
+import com.xuena.supplier.mapper.PermissionMapper;
+import com.xuena.supplier.mapper.RoleMapper;
+import com.xuena.supplier.mapper.RoleMenuMapper;
+import com.xuena.supplier.mapper.RolePermissionMapper;
+import com.xuena.supplier.service.RoleService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+public class RoleServiceImpl implements RoleService {
+
+    private final RoleMapper roleMapper;
+    private final RolePermissionMapper rolePermissionMapper;
+    private final RoleMenuMapper roleMenuMapper;
+    private final PermissionMapper permissionMapper;
+
+    public RoleServiceImpl(RoleMapper roleMapper, RolePermissionMapper rolePermissionMapper,
+<span class="fc" id="L24">                          RoleMenuMapper roleMenuMapper, PermissionMapper permissionMapper) {</span>
+<span class="fc" id="L25">        this.roleMapper = roleMapper;</span>
+<span class="fc" id="L26">        this.rolePermissionMapper = rolePermissionMapper;</span>
+<span class="fc" id="L27">        this.roleMenuMapper = roleMenuMapper;</span>
+<span class="fc" id="L28">        this.permissionMapper = permissionMapper;</span>
+<span class="fc" id="L29">    }</span>
+
+    @Override
+    public RoleDO getById(Long id) {
+<span class="nc" id="L33">        RoleDO role = roleMapper.selectById(id);</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (role == null) {</span>
+<span class="nc" id="L35">            throw new BusinessException(&quot;角色不存在&quot;);</span>
+        }
+<span class="nc" id="L37">        return role;</span>
+    }
+
+    @Override
+    public RoleDO getByCode(String code) {
+<span class="nc" id="L42">        return roleMapper.selectByCode(code);</span>
+    }
+
+    @Override
+    public List&lt;RoleDO&gt; list() {
+<span class="nc" id="L47">        return roleMapper.selectList();</span>
+    }
+
+    @Override
+    @Transactional
+    public RoleDO create(RoleDO role) {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (roleMapper.countByCode(role.getCode()) &gt; 0) {</span>
+<span class="nc" id="L54">            throw new BusinessException(&quot;角色编码已存在&quot;);</span>
+        }
+<span class="nc" id="L56">        roleMapper.insert(role);</span>
+<span class="nc" id="L57">        return role;</span>
+    }
+
+    @Override
+    @Transactional
+    public RoleDO update(Long id, RoleDO role) {
+<span class="nc" id="L63">        RoleDO existing = getById(id);</span>
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if (!existing.getCode().equals(role.getCode()) &amp;&amp; roleMapper.countByCode(role.getCode()) &gt; 0) {</span>
+<span class="nc" id="L65">            throw new BusinessException(&quot;角色编码已存在&quot;);</span>
+        }
+<span class="nc" id="L67">        role.setId(id);</span>
+<span class="nc" id="L68">        roleMapper.update(role);</span>
+<span class="nc" id="L69">        return role;</span>
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+<span class="nc" id="L75">        RoleDO role = getById(id);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (role.getIsSystem() == 1) {</span>
+<span class="nc" id="L77">            throw new BusinessException(&quot;系统角色不能删除&quot;);</span>
+        }
+<span class="nc" id="L79">        roleMapper.delete(id);</span>
+<span class="nc" id="L80">    }</span>
+
+    @Override
+    @Transactional
+    public void assignPermissions(Long roleId, List&lt;Long&gt; permissionIds) {
+<span class="nc" id="L85">        getById(roleId);</span>
+<span class="nc" id="L86">        rolePermissionMapper.deleteByRoleId(roleId);</span>
+<span class="nc" id="L87">        permissionIds.forEach(permissionId -&gt; {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (permissionMapper.selectById(permissionId) != null) {</span>
+<span class="nc" id="L89">                rolePermissionMapper.insert(roleId, permissionId);</span>
+            }
+<span class="nc" id="L91">        });</span>
+<span class="nc" id="L92">    }</span>
+
+    @Override
+    @Transactional
+    public void assignMenus(Long roleId, List&lt;Long&gt; menuIds) {
+<span class="nc" id="L97">        getById(roleId);</span>
+<span class="nc" id="L98">        roleMenuMapper.deleteByRoleId(roleId);</span>
+<span class="nc" id="L99">        menuIds.forEach(menuId -&gt; {</span>
+<span class="nc" id="L100">            roleMenuMapper.insert(roleId, menuId);</span>
+<span class="nc" id="L101">        });</span>
+<span class="nc" id="L102">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -12,16 +12,11 @@ export default function SupplierPool() {
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ name: '', category: '', isDisabled: undefined })
 
-  useEffect(() => {
-    fetchData()
-    fetchCategories()
-  }, [filters])
-
   const fetchData = async () => {
     try {
       const res = await poolService.list(filters)
       setData(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取供应商列表失败')
     }
   }
@@ -30,10 +25,15 @@ export default function SupplierPool() {
     try {
       const res = await categoryService.list()
       setCategories(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取品类列表失败')
     }
   }
+
+  useEffect(() => {
+    fetchData()
+    fetchCategories()
+  }, [filters])
 
   const handleAdd = () => {
     form.resetFields()
@@ -52,7 +52,7 @@ export default function SupplierPool() {
       await poolService.delete(id)
       message.success('删除成功')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('删除失败')
     }
   }
@@ -62,7 +62,7 @@ export default function SupplierPool() {
       await poolService.enable(id)
       message.success('已启用')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('操作失败')
     }
   }
@@ -72,7 +72,7 @@ export default function SupplierPool() {
       await poolService.disable(id)
       message.success('已禁用')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('操作失败')
     }
   }

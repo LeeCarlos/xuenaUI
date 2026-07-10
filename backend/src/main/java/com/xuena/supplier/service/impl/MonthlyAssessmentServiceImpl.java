@@ -35,14 +35,16 @@ public class MonthlyAssessmentServiceImpl implements MonthlyAssessmentService {
     }
 
     @Override
-    public List<MonthlyAssessmentDO> list(String yearMonth, String supplierName, String category, String grade, String status) {
+    public List<MonthlyAssessmentDO> list(String yearMonth, String supplierName, String category,
+            String grade, String status) {
         return monthlyAssessmentMapper.selectList(yearMonth, supplierName, category, grade, status);
     }
 
     @Override
     @Transactional
     public MonthlyAssessmentDO create(MonthlyAssessmentDO assessment) {
-        if (monthlyAssessmentMapper.countByYearMonthAndSupplier(assessment.getYearMonth(), assessment.getSupplierName()) > 0) {
+        if (monthlyAssessmentMapper.countByYearMonthAndSupplier(
+                assessment.getYearMonth(), assessment.getSupplierName()) > 0) {
             throw new BusinessException("该供应商当月考核记录已存在");
         }
         calculateAndSave(assessment);

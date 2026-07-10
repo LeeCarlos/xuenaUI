@@ -8,7 +8,6 @@ D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\UserMapper.
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\MenuDO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\MonthlyAssessmentServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\RoleMenuMapper.java
-D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\config\EasyExcelConfig.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\enums\DepartmentEnum.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\LoginResponse.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\AuthController.java

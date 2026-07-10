@@ -12,10 +12,6 @@ export default function Dashboard() {
     pendingAssessmentCount: 0,
   })
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
-
   const fetchStats = async () => {
     try {
       const [supplierRes, assessmentRes] = await Promise.all([
@@ -36,6 +32,10 @@ export default function Dashboard() {
       console.error('Failed to fetch stats:', error)
     }
   }
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
 
   return (
     <div>

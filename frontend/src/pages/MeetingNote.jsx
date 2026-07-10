@@ -12,16 +12,11 @@ export default function MeetingNote() {
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ supplierName: '' })
 
-  useEffect(() => {
-    fetchData()
-    fetchSuppliers()
-  }, [filters])
-
   const fetchData = async () => {
     try {
       const res = await meetingNoteService.list(filters)
       setData(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取会议纪要失败')
     }
   }
@@ -30,10 +25,15 @@ export default function MeetingNote() {
     try {
       const res = await poolService.list()
       setSuppliers(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取供应商列表失败')
     }
   }
+
+  useEffect(() => {
+    fetchData()
+    fetchSuppliers()
+  }, [filters])
 
   const handleAdd = () => {
     form.resetFields()
@@ -52,7 +52,7 @@ export default function MeetingNote() {
       await meetingNoteService.delete(id)
       message.success('删除成功')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('删除失败')
     }
   }

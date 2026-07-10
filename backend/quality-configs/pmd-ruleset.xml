@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<ruleset name="supplier-performance-pmd-rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+         https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>供应商绩效分析系统 PMD 代码质量规则集</description>
+
+    <!-- ==================== Best Practices ==================== -->
+    <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/PrimitiveWrapperInstantiation">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod">
+        <priority>3</priority>
+    </rule>
+
+    <!-- ==================== Code Style ==================== -->
+    <rule ref="category/java/codestyle.xml/EmptyControlStatement">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/java/codestyle.xml/UnnecessaryModifier">
+        <priority>4</priority>
+    </rule>
+    <rule ref="category/java/codestyle.xml/UnnecessaryReturn">
+        <priority>4</priority>
+    </rule>
+    <rule ref="category/java/codestyle.xml/UselessParentheses">
+        <priority>4</priority>
+    </rule>
+
+    <!-- ==================== Design ==================== -->
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <priority>2</priority>
+        <properties>
+            <property name="methodReportLevel" value="15"/>
+            <property name="classReportLevel" value="50"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/ExcessiveParameterList">
+        <priority>2</priority>
+        <properties>
+            <property name="minimum" value="7"/>
+        </properties>
+    </rule>
+
+    <!-- ==================== Error Prone ==================== -->
+    <rule ref="category/java/errorprone.xml/BrokenNullCheck">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals">
+        <priority>2</priority>
+    </rule>
+
+    <!-- ==================== Performance ==================== -->
+    <rule ref="category/java/performance.xml/AppendCharacterWithChar">
+        <priority>3</priority>
+    </rule>
+
+</ruleset>

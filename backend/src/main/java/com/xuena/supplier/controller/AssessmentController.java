@@ -3,7 +3,15 @@ package com.xuena.supplier.controller;
 import com.xuena.supplier.entity.MonthlyAssessmentDO;
 import com.xuena.supplier.service.MonthlyAssessmentService;
 import com.xuena.supplier.vo.ResultVO;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -23,7 +31,8 @@ public class AssessmentController {
                                                     @RequestParam(required = false) String category,
                                                     @RequestParam(required = false) String grade,
                                                     @RequestParam(required = false) String status) {
-        List<MonthlyAssessmentDO> list = monthlyAssessmentService.list(yearMonth, supplierName, category, grade, status);
+        List<MonthlyAssessmentDO> list = monthlyAssessmentService.list(
+                yearMonth, supplierName, category, grade, status);
         return ResultVO.success(list);
     }
 

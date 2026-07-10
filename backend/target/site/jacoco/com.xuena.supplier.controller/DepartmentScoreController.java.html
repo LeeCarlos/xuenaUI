@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DepartmentScoreController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">supplier-performance</a> &gt; <a href="index.source.html" class="el_package">com.xuena.supplier.controller</a> &gt; <span class="el_source">DepartmentScoreController.java</span></div><h1>DepartmentScoreController.java</h1><pre class="source lang-java linenums">package com.xuena.supplier.controller;
+
+import com.xuena.supplier.entity.DepartmentScoreDO;
+import com.xuena.supplier.service.DepartmentScoreService;
+import com.xuena.supplier.vo.ResultVO;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/department-score&quot;)
+public class DepartmentScoreController {
+
+    private final DepartmentScoreService departmentScoreService;
+
+<span class="fc" id="L24">    public DepartmentScoreController(DepartmentScoreService departmentScoreService) {</span>
+<span class="fc" id="L25">        this.departmentScoreService = departmentScoreService;</span>
+<span class="fc" id="L26">    }</span>
+
+    @GetMapping
+    public ResultVO&lt;List&lt;DepartmentScoreDO&gt;&gt; list(@RequestParam(required = false) String yearMonth,
+                                                   @RequestParam(required = false) String supplierName,
+                                                   @RequestParam(required = false) String department) {
+<span class="nc" id="L32">        List&lt;DepartmentScoreDO&gt; list = departmentScoreService.list(yearMonth, supplierName, department);</span>
+<span class="nc" id="L33">        return ResultVO.success(list);</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResultVO&lt;DepartmentScoreDO&gt; getById(@PathVariable Long id) {
+<span class="nc" id="L38">        DepartmentScoreDO score = departmentScoreService.getById(id);</span>
+<span class="nc" id="L39">        return ResultVO.success(score);</span>
+    }
+
+    @PostMapping
+    public ResultVO&lt;DepartmentScoreDO&gt; create(@RequestBody DepartmentScoreDO score) {
+<span class="nc" id="L44">        DepartmentScoreDO result = departmentScoreService.create(score);</span>
+<span class="nc" id="L45">        return ResultVO.success(result);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResultVO&lt;DepartmentScoreDO&gt; update(@PathVariable Long id, @RequestBody DepartmentScoreDO score) {
+<span class="nc" id="L50">        DepartmentScoreDO result = departmentScoreService.update(id, score);</span>
+<span class="nc" id="L51">        return ResultVO.success(result);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResultVO&lt;Void&gt; delete(@PathVariable Long id) {
+<span class="nc" id="L56">        departmentScoreService.delete(id);</span>
+<span class="nc" id="L57">        return ResultVO.success();</span>
+    }
+
+    @PostMapping(&quot;/{id}/submit&quot;)
+    public ResultVO&lt;Void&gt; submit(@PathVariable Long id) {
+<span class="nc" id="L62">        departmentScoreService.submit(id);</span>
+<span class="nc" id="L63">        return ResultVO.success();</span>
+    }
+
+    @PostMapping(&quot;/{id}/complete&quot;)
+    public ResultVO&lt;Void&gt; complete(@PathVariable Long id) {
+<span class="nc" id="L68">        departmentScoreService.complete(id);</span>
+<span class="nc" id="L69">        return ResultVO.success();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

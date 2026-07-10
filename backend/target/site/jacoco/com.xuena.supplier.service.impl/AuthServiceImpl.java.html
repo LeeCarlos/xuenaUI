@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">supplier-performance</a> &gt; <a href="index.source.html" class="el_package">com.xuena.supplier.service.impl</a> &gt; <span class="el_source">AuthServiceImpl.java</span></div><h1>AuthServiceImpl.java</h1><pre class="source lang-java linenums">package com.xuena.supplier.service.impl;
+
+import com.xuena.supplier.entity.MenuDO;
+import com.xuena.supplier.entity.UserDO;
+import com.xuena.supplier.exception.BusinessException;
+import com.xuena.supplier.mapper.MenuMapper;
+import com.xuena.supplier.mapper.PermissionMapper;
+import com.xuena.supplier.mapper.RoleMapper;
+import com.xuena.supplier.mapper.UserMapper;
+import com.xuena.supplier.mapper.UserRoleMapper;
+import com.xuena.supplier.service.AuthService;
+import com.xuena.supplier.util.JwtUtil;
+import com.xuena.supplier.vo.request.LoginRequest;
+import com.xuena.supplier.vo.response.LoginResponse;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class AuthServiceImpl implements AuthService {
+
+    private final UserMapper userMapper;
+    private final RoleMapper roleMapper;
+    private final MenuMapper menuMapper;
+    private final PermissionMapper permissionMapper;
+    private final UserRoleMapper userRoleMapper;
+    private final JwtUtil jwtUtil;
+    private final com.xuena.supplier.util.PasswordUtil passwordUtil;
+
+    public AuthServiceImpl(UserMapper userMapper, RoleMapper roleMapper, MenuMapper menuMapper,
+                          PermissionMapper permissionMapper, UserRoleMapper userRoleMapper, JwtUtil jwtUtil,
+<span class="fc" id="L34">                          com.xuena.supplier.util.PasswordUtil passwordUtil) {</span>
+<span class="fc" id="L35">        this.userMapper = userMapper;</span>
+<span class="fc" id="L36">        this.roleMapper = roleMapper;</span>
+<span class="fc" id="L37">        this.menuMapper = menuMapper;</span>
+<span class="fc" id="L38">        this.permissionMapper = permissionMapper;</span>
+<span class="fc" id="L39">        this.userRoleMapper = userRoleMapper;</span>
+<span class="fc" id="L40">        this.jwtUtil = jwtUtil;</span>
+<span class="fc" id="L41">        this.passwordUtil = passwordUtil;</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+<span class="fc" id="L46">        UserDO user = userMapper.selectByUsername(request.getUsername());</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L48">            throw new BusinessException(&quot;用户名或密码错误&quot;);</span>
+        }
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (!passwordUtil.matches(request.getPassword(), user.getPassword())) {</span>
+<span class="fc" id="L52">            throw new BusinessException(&quot;用户名或密码错误&quot;);</span>
+        }
+
+<span class="pc bpc" id="L55" title="2 of 4 branches missed.">        if (user.getIsEnabled() == null || user.getIsEnabled() == 0) {</span>
+<span class="nc" id="L56">            throw new BusinessException(&quot;用户已被禁用&quot;);</span>
+        }
+
+<span class="fc" id="L59">        List&lt;Long&gt; roleIds = userRoleMapper.selectRoleIdsByUserId(user.getId());</span>
+<span class="fc" id="L60">        List&lt;String&gt; roleCodes = roleIds.stream()</span>
+<span class="fc" id="L61">                .map(roleMapper::selectById)</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                .filter(r -&gt; r != null)</span>
+<span class="fc" id="L63">                .map(r -&gt; r.getCode())</span>
+<span class="fc" id="L64">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L66">        List&lt;String&gt; permissions = permissionMapper.selectByRoleIds(roleIds).stream()</span>
+<span class="fc" id="L67">                .map(p -&gt; p.getCode())</span>
+<span class="fc" id="L68">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L70">        List&lt;MenuDO&gt; menus = menuMapper.selectByRoleIds(roleIds);</span>
+
+<span class="fc" id="L72">        String token = jwtUtil.generateToken(String.valueOf(user.getId()), user.getUsername());</span>
+<span class="fc" id="L73">        String refreshToken = jwtUtil.generateRefreshToken(user.getId());</span>
+
+<span class="fc" id="L75">        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();</span>
+<span class="fc" id="L76">        userInfo.setId(user.getId());</span>
+<span class="fc" id="L77">        userInfo.setUsername(user.getUsername());</span>
+<span class="fc" id="L78">        userInfo.setRealName(user.getRealName());</span>
+<span class="fc" id="L79">        userInfo.setDepartment(user.getDepartment());</span>
+<span class="fc" id="L80">        userInfo.setRoles(roleCodes);</span>
+<span class="fc" id="L81">        userInfo.setPermissions(permissions);</span>
+
+<span class="fc" id="L83">        LoginResponse response = new LoginResponse();</span>
+<span class="fc" id="L84">        response.setToken(token);</span>
+<span class="fc" id="L85">        response.setRefreshToken(refreshToken);</span>
+<span class="fc" id="L86">        response.setUser(userInfo);</span>
+<span class="fc" id="L87">        response.setMenus(buildMenuTree(menus));</span>
+
+<span class="fc" id="L89">        return response;</span>
+    }
+
+    @Override
+    public void logout(String token) {
+<span class="nc" id="L94">    }</span>
+
+    @Override
+    public LoginResponse refresh(String refreshToken) {
+<span class="fc" id="L98">        String userId = String.valueOf(jwtUtil.getUserIdFromToken(refreshToken));</span>
+<span class="fc" id="L99">        UserDO user = userMapper.selectById(Long.parseLong(userId));</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L101">            throw new BusinessException(&quot;无效的刷新令牌&quot;);</span>
+        }
+
+<span class="fc" id="L104">        String token = jwtUtil.generateToken(String.valueOf(user.getId()), user.getUsername());</span>
+<span class="fc" id="L105">        String newRefreshToken = jwtUtil.generateRefreshToken(user.getId());</span>
+
+<span class="fc" id="L107">        List&lt;Long&gt; roleIds = userRoleMapper.selectRoleIdsByUserId(user.getId());</span>
+<span class="fc" id="L108">        List&lt;String&gt; roleCodes = roleIds.stream()</span>
+<span class="fc" id="L109">                .map(roleMapper::selectById)</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">                .filter(r -&gt; r != null)</span>
+<span class="fc" id="L111">                .map(r -&gt; r.getCode())</span>
+<span class="fc" id="L112">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L114">        List&lt;String&gt; permissions = permissionMapper.selectByRoleIds(roleIds).stream()</span>
+<span class="fc" id="L115">                .map(p -&gt; p.getCode())</span>
+<span class="fc" id="L116">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L118">        List&lt;MenuDO&gt; menus = menuMapper.selectByRoleIds(roleIds);</span>
+
+<span class="fc" id="L120">        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();</span>
+<span class="fc" id="L121">        userInfo.setId(user.getId());</span>
+<span class="fc" id="L122">        userInfo.setUsername(user.getUsername());</span>
+<span class="fc" id="L123">        userInfo.setRealName(user.getRealName());</span>
+<span class="fc" id="L124">        userInfo.setDepartment(user.getDepartment());</span>
+<span class="fc" id="L125">        userInfo.setRoles(roleCodes);</span>
+<span class="fc" id="L126">        userInfo.setPermissions(permissions);</span>
+
+<span class="fc" id="L128">        LoginResponse response = new LoginResponse();</span>
+<span class="fc" id="L129">        response.setToken(token);</span>
+<span class="fc" id="L130">        response.setRefreshToken(newRefreshToken);</span>
+<span class="fc" id="L131">        response.setUser(userInfo);</span>
+<span class="fc" id="L132">        response.setMenus(buildMenuTree(menus));</span>
+
+<span class="fc" id="L134">        return response;</span>
+    }
+
+    private List&lt;LoginResponse.MenuInfo&gt; buildMenuTree(List&lt;MenuDO&gt; menus) {
+<span class="fc" id="L138">        List&lt;LoginResponse.MenuInfo&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L139">        menus.forEach(menu -&gt; {</span>
+<span class="fc" id="L140">            LoginResponse.MenuInfo menuInfo = new LoginResponse.MenuInfo();</span>
+<span class="fc" id="L141">            menuInfo.setId(menu.getId());</span>
+<span class="fc" id="L142">            menuInfo.setName(menu.getName());</span>
+<span class="fc" id="L143">            menuInfo.setPath(menu.getPath());</span>
+<span class="fc" id="L144">            menuInfo.setComponent(menu.getComponent());</span>
+<span class="fc" id="L145">            menuInfo.setIcon(menu.getIcon());</span>
+<span class="fc" id="L146">            menuInfo.setParentId(menu.getParentId());</span>
+<span class="fc" id="L147">            menuInfo.setType(menu.getType());</span>
+<span class="fc" id="L148">            menuInfo.setChildren(new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L149">            result.add(menuInfo);</span>
+<span class="fc" id="L150">        });</span>
+
+<span class="fc" id="L152">        List&lt;LoginResponse.MenuInfo&gt; tree = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L153">        result.forEach(menu -&gt; {</span>
+<span class="pc bpc" id="L154" title="2 of 4 branches missed.">            if (menu.getParentId() == null || menu.getParentId() == 0) {</span>
+<span class="fc" id="L155">                tree.add(menu);</span>
+            } else {
+<span class="nc" id="L157">                result.stream()</span>
+<span class="nc" id="L158">                        .filter(parent -&gt; parent.getId().equals(menu.getParentId()))</span>
+<span class="nc" id="L159">                        .findFirst()</span>
+<span class="nc" id="L160">                        .ifPresent(parent -&gt; parent.getChildren().add(menu));</span>
+            }
+<span class="fc" id="L162">        });</span>
+
+<span class="fc" id="L164">        return tree;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

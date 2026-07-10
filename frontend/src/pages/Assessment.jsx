@@ -12,16 +12,11 @@ export default function Assessment() {
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ yearMonth: '', supplierName: '', grade: '', status: '' })
 
-  useEffect(() => {
-    fetchData()
-    fetchSuppliers()
-  }, [filters])
-
   const fetchData = async () => {
     try {
       const res = await assessmentService.list(filters)
       setData(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取考核记录失败')
     }
   }
@@ -30,10 +25,15 @@ export default function Assessment() {
     try {
       const res = await poolService.list()
       setSuppliers(res.data || [])
-    } catch (error) {
+    } catch {
       message.error('获取供应商列表失败')
     }
   }
+
+  useEffect(() => {
+    fetchData()
+    fetchSuppliers()
+  }, [filters])
 
   const handleAdd = () => {
     form.resetFields()
@@ -52,7 +52,7 @@ export default function Assessment() {
       await assessmentService.delete(id)
       message.success('删除成功')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('删除失败')
     }
   }
@@ -62,7 +62,7 @@ export default function Assessment() {
       await assessmentService.submit(id)
       message.success('已提交')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('提交失败')
     }
   }
@@ -72,7 +72,7 @@ export default function Assessment() {
       await assessmentService.lock(id)
       message.success('已锁定')
       fetchData()
-    } catch (error) {
+    } catch {
       message.error('锁定失败')
     }
   }

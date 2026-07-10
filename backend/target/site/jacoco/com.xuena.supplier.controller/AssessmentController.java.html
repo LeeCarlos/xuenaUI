@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AssessmentController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">supplier-performance</a> &gt; <a href="index.source.html" class="el_package">com.xuena.supplier.controller</a> &gt; <span class="el_source">AssessmentController.java</span></div><h1>AssessmentController.java</h1><pre class="source lang-java linenums">package com.xuena.supplier.controller;
+
+import com.xuena.supplier.entity.MonthlyAssessmentDO;
+import com.xuena.supplier.service.MonthlyAssessmentService;
+import com.xuena.supplier.vo.ResultVO;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/assessment&quot;)
+public class AssessmentController {
+
+    private final MonthlyAssessmentService monthlyAssessmentService;
+
+<span class="fc" id="L24">    public AssessmentController(MonthlyAssessmentService monthlyAssessmentService) {</span>
+<span class="fc" id="L25">        this.monthlyAssessmentService = monthlyAssessmentService;</span>
+<span class="fc" id="L26">    }</span>
+
+    @GetMapping
+    public ResultVO&lt;List&lt;MonthlyAssessmentDO&gt;&gt; list(@RequestParam(required = false) String yearMonth,
+                                                    @RequestParam(required = false) String supplierName,
+                                                    @RequestParam(required = false) String category,
+                                                    @RequestParam(required = false) String grade,
+                                                    @RequestParam(required = false) String status) {
+<span class="nc" id="L34">        List&lt;MonthlyAssessmentDO&gt; list = monthlyAssessmentService.list(</span>
+                yearMonth, supplierName, category, grade, status);
+<span class="nc" id="L36">        return ResultVO.success(list);</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResultVO&lt;MonthlyAssessmentDO&gt; getById(@PathVariable Long id) {
+<span class="nc" id="L41">        MonthlyAssessmentDO assessment = monthlyAssessmentService.getById(id);</span>
+<span class="nc" id="L42">        return ResultVO.success(assessment);</span>
+    }
+
+    @PostMapping
+    public ResultVO&lt;MonthlyAssessmentDO&gt; create(@RequestBody MonthlyAssessmentDO assessment) {
+<span class="nc" id="L47">        MonthlyAssessmentDO result = monthlyAssessmentService.create(assessment);</span>
+<span class="nc" id="L48">        return ResultVO.success(result);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResultVO&lt;MonthlyAssessmentDO&gt; update(@PathVariable Long id, @RequestBody MonthlyAssessmentDO assessment) {
+<span class="nc" id="L53">        MonthlyAssessmentDO result = monthlyAssessmentService.update(id, assessment);</span>
+<span class="nc" id="L54">        return ResultVO.success(result);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResultVO&lt;Void&gt; delete(@PathVariable Long id) {
+<span class="nc" id="L59">        monthlyAssessmentService.delete(id);</span>
+<span class="nc" id="L60">        return ResultVO.success();</span>
+    }
+
+    @PostMapping(&quot;/{id}/submit&quot;)
+    public ResultVO&lt;Void&gt; submit(@PathVariable Long id) {
+<span class="nc" id="L65">        monthlyAssessmentService.submit(id);</span>
+<span class="nc" id="L66">        return ResultVO.success();</span>
+    }
+
+    @PostMapping(&quot;/{id}/lock&quot;)
+    public ResultVO&lt;Void&gt; lock(@PathVariable Long id) {
+<span class="nc" id="L71">        monthlyAssessmentService.lock(id);</span>
+<span class="nc" id="L72">        return ResultVO.success();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

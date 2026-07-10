@@ -13,9 +13,7 @@ service.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
 service.interceptors.response.use(
@@ -32,9 +30,7 @@ service.interceptors.response.use(
     }
     return res
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
 export default service

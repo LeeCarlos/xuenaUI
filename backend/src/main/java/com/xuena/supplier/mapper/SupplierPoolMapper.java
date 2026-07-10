@@ -13,7 +13,9 @@ public interface SupplierPoolMapper {
 
     SupplierPoolDO selectByName(@Param("name") String name);
 
-    List<SupplierPoolDO> selectList(@Param("name") String name, @Param("category") String category, @Param("isDisabled") Integer isDisabled);
+    List<SupplierPoolDO> selectList(@Param("name") String name,
+            @Param("category") String category,
+            @Param("isDisabled") Integer isDisabled);
 
     int insert(SupplierPoolDO supplier);
 

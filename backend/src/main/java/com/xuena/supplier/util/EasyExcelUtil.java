@@ -63,7 +63,8 @@ public class EasyExcelUtil {
         }
     }
 
-    public static <T> void writeExcel(HttpServletResponse response, String fileName, Class<T> clazz, List<T> data) throws IOException {
+    public static <T> void writeExcel(HttpServletResponse response, String fileName,
+            Class<T> clazz, List<T> data) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
         String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
