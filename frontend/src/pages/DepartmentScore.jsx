@@ -7,7 +7,6 @@ import poolService from '../services/pool'
 export default function DepartmentScore() {
   const [data, setData] = useState([])
   const [suppliers, setSuppliers] = useState([])
-  const [form] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ yearMonth: '', supplierName: '', department: '' })
@@ -36,13 +35,11 @@ export default function DepartmentScore() {
   }, [filters])
 
   const handleAdd = () => {
-    form.resetFields()
     setEditingId(null)
     setModalVisible(true)
   }
 
   const handleEdit = (record) => {
-    form.setFieldsValue(record)
     setEditingId(record.id)
     setModalVisible(true)
   }
@@ -171,43 +168,62 @@ export default function DepartmentScore() {
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
-        <Form form={form} onFinish={handleFormSubmit} layout="vertical">
-          <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请输入年月' }]}>
-            <Input placeholder="如2024-01" />
-          </Form.Item>
-          <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
-            <Select>
-              {suppliers.map((s) => (
-                <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="department" label="部门" rules={[{ required: true, message: '请选择部门' }]}>
-            <Select>
-              <Select.Option value="质量">质量部</Select.Option>
-              <Select.Option value="计划">计划部</Select.Option>
-              <Select.Option value="包开">包开部</Select.Option>
-              <Select.Option value="采购">采购部</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="dimensionGroup" label="维度组">
-            <Input />
-          </Form.Item>
-          <Form.Item name="dimensionScore" label="维度得分">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="subScores" label="子项得分(JSON)">
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item name="exceptionReason" label="异常原因">
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">确定</Button>
-            <Button onClick={() => setModalVisible(false)} style={{ marginLeft: '8px' }}>取消</Button>
-          </Form.Item>
-        </Form>
+        <DepartmentScoreForm suppliers={suppliers} editingId={editingId} data={data} onSubmit={handleFormSubmit} onCancel={() => setModalVisible(false)} />
       </Modal>
     </div>
+  )
+}
+
+function DepartmentScoreForm({ suppliers, editingId, data, onSubmit, onCancel }) {
+  const [form] = Form.useForm()
+  
+  useEffect(() => {
+    if (editingId) {
+      const record = data.find((item) => item.id === editingId)
+      if (record) {
+        form.setFieldsValue(record)
+      }
+    } else {
+      form.resetFields()
+    }
+  }, [editingId, data, form])
+
+  return (
+    <Form form={form} onFinish={onSubmit} layout="vertical">
+      <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请输入年月' }]}>
+        <Input placeholder="如2024-01" />
+      </Form.Item>
+      <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
+        <Select>
+          {suppliers.map((s) => (
+            <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item name="department" label="部门" rules={[{ required: true, message: '请选择部门' }]}>
+        <Select>
+          <Select.Option value="质量">质量部</Select.Option>
+          <Select.Option value="计划">计划部</Select.Option>
+          <Select.Option value="包开">包开部</Select.Option>
+          <Select.Option value="采购">采购部</Select.Option>
+        </Select>
+      </Form.Item>
+      <Form.Item name="dimensionGroup" label="维度组">
+        <Input />
+      </Form.Item>
+      <Form.Item name="dimensionScore" label="维度得分">
+        <InputNumber min={0} style={{ width: '100%' }} />
+      </Form.Item>
+      <Form.Item name="subScores" label="子项得分(JSON)">
+        <Input.TextArea />
+      </Form.Item>
+      <Form.Item name="exceptionReason" label="异常原因">
+        <Input.TextArea />
+      </Form.Item>
+      <Form.Item>
+        <Button type="primary" htmlType="submit">确定</Button>
+        <Button onClick={onCancel} style={{ marginLeft: '8px' }}>取消</Button>
+      </Form.Item>
+    </Form>
   )
 }

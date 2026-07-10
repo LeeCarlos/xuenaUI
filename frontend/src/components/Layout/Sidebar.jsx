@@ -29,7 +29,6 @@ const menuIconMap = {
   Dashboard: DashboardOutlined,
   User: UserOutlined,
   BarChart: BarChartOutlined,
-  BarChart: BarChartOutlined,
 }
 
 function renderMenuItems(menus, navigate) {
@@ -37,18 +36,20 @@ function renderMenuItems(menus, navigate) {
     const Icon = menuIconMap[menu.icon] || SettingOutlined
     
     if (menu.children && menu.children.length > 0) {
-      return (
-        <Menu.SubMenu key={menu.id} icon={<Icon />} title={menu.name}>
-          {renderMenuItems(menu.children, navigate)}
-        </Menu.SubMenu>
-      )
+      return {
+        key: menu.id.toString(),
+        label: menu.name,
+        icon: <Icon />,
+        children: renderMenuItems(menu.children, navigate),
+      }
     }
     
-    return (
-      <Menu.Item key={menu.id} icon={<Icon />} onClick={() => navigate(menu.path)}>
-        {menu.name}
-      </Menu.Item>
-    )
+    return {
+      key: menu.id.toString(),
+      label: menu.name,
+      icon: <Icon />,
+      onClick: () => navigate(menu.path),
+    }
   })
 }
 

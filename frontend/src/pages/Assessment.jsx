@@ -7,7 +7,6 @@ import poolService from '../services/pool'
 export default function Assessment() {
   const [data, setData] = useState([])
   const [suppliers, setSuppliers] = useState([])
-  const [form] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ yearMonth: '', supplierName: '', grade: '', status: '' })
@@ -36,13 +35,11 @@ export default function Assessment() {
   }, [filters])
 
   const handleAdd = () => {
-    form.resetFields()
     setEditingId(null)
     setModalVisible(true)
   }
 
   const handleEdit = (record) => {
-    form.setFieldsValue(record)
     setEditingId(record.id)
     setModalVisible(true)
   }
@@ -179,41 +176,60 @@ export default function Assessment() {
         footer={null}
         width={800}
       >
-        <Form form={form} onFinish={handleFormSubmit} layout="vertical">
-          <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请输入年月' }]}>
-            <Input placeholder="如2024-01" />
-          </Form.Item>
-          <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
-            <Select>
-              {suppliers.map((s) => (
-                <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="category" label="品类">
-            <Input />
-          </Form.Item>
-          <Form.Item name="dimensionA" label="品质考核(A) 满分25">
-            <InputNumber min={0} max={25} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="dimensionB" label="成本考核(B) 满分20">
-            <InputNumber min={0} max={20} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="dimensionC" label="交货考核(C) 满分20">
-            <InputNumber min={0} max={20} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="dimensionD" label="服务考核(D) 满分35">
-            <InputNumber min={0} max={35} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="conclusion" label="结论">
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">确定</Button>
-            <Button onClick={() => setModalVisible(false)} style={{ marginLeft: '8px' }}>取消</Button>
-          </Form.Item>
-        </Form>
+        <AssessmentForm suppliers={suppliers} editingId={editingId} data={data} onSubmit={handleFormSubmit} onCancel={() => setModalVisible(false)} />
       </Modal>
     </div>
+  )
+}
+
+function AssessmentForm({ suppliers, editingId, data, onSubmit, onCancel }) {
+  const [form] = Form.useForm()
+  
+  useEffect(() => {
+    if (editingId) {
+      const record = data.find((item) => item.id === editingId)
+      if (record) {
+        form.setFieldsValue(record)
+      }
+    } else {
+      form.resetFields()
+    }
+  }, [editingId, data, form])
+
+  return (
+    <Form form={form} onFinish={onSubmit} layout="vertical">
+      <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请输入年月' }]}>
+        <Input placeholder="如2024-01" />
+      </Form.Item>
+      <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
+        <Select>
+          {suppliers.map((s) => (
+            <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item name="category" label="品类">
+        <Input />
+      </Form.Item>
+      <Form.Item name="dimensionA" label="品质考核(A) 满分25">
+        <InputNumber min={0} max={25} style={{ width: '100%' }} />
+      </Form.Item>
+      <Form.Item name="dimensionB" label="成本考核(B) 满分20">
+        <InputNumber min={0} max={20} style={{ width: '100%' }} />
+      </Form.Item>
+      <Form.Item name="dimensionC" label="交货考核(C) 满分20">
+        <InputNumber min={0} max={20} style={{ width: '100%' }} />
+      </Form.Item>
+      <Form.Item name="dimensionD" label="服务考核(D) 满分35">
+        <InputNumber min={0} max={35} style={{ width: '100%' }} />
+      </Form.Item>
+      <Form.Item name="conclusion" label="结论">
+        <Input.TextArea />
+      </Form.Item>
+      <Form.Item>
+        <Button type="primary" htmlType="submit">确定</Button>
+        <Button onClick={onCancel} style={{ marginLeft: '8px' }}>取消</Button>
+      </Form.Item>
+    </Form>
   )
 }

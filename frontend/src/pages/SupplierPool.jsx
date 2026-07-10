@@ -7,7 +7,6 @@ import categoryService from '../services/category'
 export default function SupplierPool() {
   const [data, setData] = useState([])
   const [categories, setCategories] = useState([])
-  const [form] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ name: '', category: '', isDisabled: undefined })
@@ -36,13 +35,11 @@ export default function SupplierPool() {
   }, [filters])
 
   const handleAdd = () => {
-    form.resetFields()
     setEditingId(null)
     setModalVisible(true)
   }
 
   const handleEdit = (record) => {
-    form.setFieldsValue(record)
     setEditingId(record.id)
     setModalVisible(true)
   }
@@ -158,23 +155,42 @@ export default function SupplierPool() {
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
-        <Form form={form} onFinish={handleSubmit} layout="vertical">
-          <Form.Item name="name" label="供应商名称" rules={[{ required: true, message: '请输入供应商名称' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="category" label="品类" rules={[{ required: true, message: '请选择品类' }]}>
-            <Select>
-              {categories.map((c) => (
-                <Select.Option key={c.id} value={c.name}>{c.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">确定</Button>
-            <Button onClick={() => setModalVisible(false)} style={{ marginLeft: '8px' }}>取消</Button>
-          </Form.Item>
-        </Form>
+        <SupplierForm categories={categories} editingId={editingId} data={data} onSubmit={handleSubmit} onCancel={() => setModalVisible(false)} />
       </Modal>
     </div>
+  )
+}
+
+function SupplierForm({ categories, editingId, data, onSubmit, onCancel }) {
+  const [form] = Form.useForm()
+  
+  useEffect(() => {
+    if (editingId) {
+      const record = data.find((item) => item.id == editingId)
+      if (record) {
+        form.setFieldsValue(record)
+      }
+    } else {
+      form.resetFields()
+    }
+  }, [editingId, data, form])
+
+  return (
+    <Form form={form} onFinish={onSubmit} layout="vertical">
+      <Form.Item name="name" label="供应商名称" rules={[{ required: true, message: '请输入供应商名称' }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="category" label="品类" rules={[{ required: true, message: '请选择品类' }]}>
+        <Select>
+          {categories.map((c) => (
+            <Select.Option key={c.id} value={c.name}>{c.name}</Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item>
+        <Button type="primary" htmlType="submit">确定</Button>
+        <Button onClick={onCancel} style={{ marginLeft: '8px' }}>取消</Button>
+      </Form.Item>
+    </Form>
   )
 }

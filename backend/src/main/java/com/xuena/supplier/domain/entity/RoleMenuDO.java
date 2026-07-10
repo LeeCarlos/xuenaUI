@@ -1,0 +1,14 @@
+package com.xuena.supplier.domain.entity;
+
+import lombok.Data;
+
+import java.util.Date;
+
+@Data
+public class RoleMenuDO {
+
+    private String id;
+    private String roleId;
+    private String menuId;
+    private Date gmtCreate;
+}

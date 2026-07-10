@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xuena.supplier.mapper.MonthlyAssessmentMapper">
-    <select id="selectById" parameterType="long" resultType="com.xuena.supplier.entity.MonthlyAssessmentDO">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.MonthlyAssessmentMapper">
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.MonthlyAssessmentDO">
         SELECT * FROM sp_monthly_assessment WHERE id = #{id} AND is_deleted = 0
     </select>
     
@@ -19,8 +19,8 @@
         ORDER BY `year_month` DESC, gmt_create DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.MonthlyAssessmentDO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sp_monthly_assessment (`year_month`, supplier_name, category, total, grade,
+    <insert id="insert" parameterType="com.xuena.supplier.entity.MonthlyAssessmentDO">
+        INSERT INTO sp_monthly_assessment (id, `year_month`, supplier_name, category, total, grade,
             dimension_a, dimension_b, dimension_c, dimension_d,
             sub_a1, sub_a2, sub_a3, sub_a4,
             sub_b1, sub_b2, sub_b3, sub_b4, sub_b5,
@@ -28,7 +28,7 @@
             sub_d1a, sub_d1b, sub_d2a, sub_d2b, sub_d2c, sub_d2d, sub_d2e,
             conclusion, exception_quality, exception_cost, exception_delivery,
             exception_service_product, exception_service_package, exception_other, status, file_name)
-        VALUES (#{yearMonth}, #{supplierName}, #{category}, #{total}, #{grade},
+        VALUES (#{id}, #{yearMonth}, #{supplierName}, #{category}, #{total}, #{grade},
             #{dimensionA}, #{dimensionB}, #{dimensionC}, #{dimensionD},
             #{subA1}, #{subA2}, #{subA3}, #{subA4},
             #{subB1}, #{subB2}, #{subB3}, #{subB4}, #{subB5},
@@ -57,7 +57,7 @@
         WHERE id = #{id}
     </update>
     
-    <update id="delete" parameterType="long">
+    <update id="delete" parameterType="string">
         UPDATE sp_monthly_assessment SET is_deleted = 1 WHERE id = #{id}
     </update>
     

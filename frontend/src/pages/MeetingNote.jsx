@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Space, message, Popconfirm } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import meetingNoteService from '../services/meetingNote'
 import poolService from '../services/pool'
@@ -7,7 +7,6 @@ import poolService from '../services/pool'
 export default function MeetingNote() {
   const [data, setData] = useState([])
   const [suppliers, setSuppliers] = useState([])
-  const [form] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [filters, setFilters] = useState({ supplierName: '' })
@@ -36,13 +35,11 @@ export default function MeetingNote() {
   }, [filters])
 
   const handleAdd = () => {
-    form.resetFields()
     setEditingId(null)
     setModalVisible(true)
   }
 
   const handleEdit = (record) => {
-    form.setFieldsValue(record)
     setEditingId(record.id)
     setModalVisible(true)
   }
@@ -120,29 +117,48 @@ export default function MeetingNote() {
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
-        <Form form={form} onFinish={handleSubmit} layout="vertical">
-          <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
-            <Select>
-              {suppliers.map((s) => (
-                <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="monthFrom" label="月份范围-起始" rules={[{ required: true, message: '请输入起始月份' }]}>
-            <Input placeholder="如2024-01" />
-          </Form.Item>
-          <Form.Item name="monthTo" label="月份范围-结束" rules={[{ required: true, message: '请输入结束月份' }]}>
-            <Input placeholder="如2024-03" />
-          </Form.Item>
-          <Form.Item name="note" label="纪要内容" rules={[{ required: true, message: '请输入纪要内容' }]}>
-            <Input.TextArea rows={4} />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">确定</Button>
-            <Button onClick={() => setModalVisible(false)} style={{ marginLeft: '8px' }}>取消</Button>
-          </Form.Item>
-        </Form>
+        <MeetingNoteForm suppliers={suppliers} editingId={editingId} data={data} onSubmit={handleSubmit} onCancel={() => setModalVisible(false)} />
       </Modal>
     </div>
+  )
+}
+
+function MeetingNoteForm({ suppliers, editingId, data, onSubmit, onCancel }) {
+  const [form] = Form.useForm()
+  
+  useEffect(() => {
+    if (editingId) {
+      const record = data.find((item) => item.id === editingId)
+      if (record) {
+        form.setFieldsValue(record)
+      }
+    } else {
+      form.resetFields()
+    }
+  }, [editingId, data, form])
+
+  return (
+    <Form form={form} onFinish={onSubmit} layout="vertical">
+      <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
+        <Select>
+          {suppliers.map((s) => (
+            <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item name="monthFrom" label="月份范围-起始" rules={[{ required: true, message: '请输入起始月份' }]}>
+        <Input placeholder="如2024-01" />
+      </Form.Item>
+      <Form.Item name="monthTo" label="月份范围-结束" rules={[{ required: true, message: '请输入结束月份' }]}>
+        <Input placeholder="如2024-03" />
+      </Form.Item>
+      <Form.Item name="note" label="纪要内容" rules={[{ required: true, message: '请输入纪要内容' }]}>
+        <Input.TextArea rows={4} />
+      </Form.Item>
+      <Form.Item>
+        <Button type="primary" htmlType="submit">确定</Button>
+        <Button onClick={onCancel} style={{ marginLeft: '8px' }}>取消</Button>
+      </Form.Item>
+    </Form>
   )
 }

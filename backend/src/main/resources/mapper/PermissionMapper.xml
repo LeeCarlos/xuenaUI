@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xuena.supplier.mapper.PermissionMapper">
-    <select id="selectById" parameterType="long" resultType="com.xuena.supplier.entity.PermissionDO">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.PermissionMapper">
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.PermissionDO">
         SELECT * FROM sp_permission WHERE id = #{id} AND is_deleted = 0
     </select>
     
@@ -25,8 +25,8 @@
     </select>
     
     <insert id="insert" parameterType="com.xuena.supplier.entity.PermissionDO">
-        INSERT INTO sp_permission (name, code, module, type, description, parent_id, sort_order)
-        VALUES (#{name}, #{code}, #{module}, #{type}, #{description}, #{parentId}, #{sortOrder})
+        INSERT INTO sp_permission (id, name, code, module, type, description, parent_id, sort_order)
+        VALUES (#{id}, #{name}, #{code}, #{module}, #{type}, #{description}, #{parentId}, #{sortOrder})
     </insert>
     
     <update id="update" parameterType="com.xuena.supplier.entity.PermissionDO">
@@ -43,7 +43,7 @@
         WHERE id = #{id}
     </update>
     
-    <update id="delete" parameterType="long">
+    <update id="delete" parameterType="string">
         UPDATE sp_permission SET is_deleted = 1 WHERE id = #{id}
     </update>
     

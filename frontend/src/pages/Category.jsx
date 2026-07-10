@@ -5,7 +5,6 @@ import categoryService from '../services/category'
 
 export default function Category() {
   const [data, setData] = useState([])
-  const [form] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
@@ -23,13 +22,11 @@ export default function Category() {
   }, [])
 
   const handleAdd = () => {
-    form.resetFields()
     setEditingId(null)
     setModalVisible(true)
   }
 
   const handleEdit = (record) => {
-    form.setFieldsValue(record)
     setEditingId(record.id)
     setModalVisible(true)
   }
@@ -92,19 +89,38 @@ export default function Category() {
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
-        <Form form={form} onFinish={handleSubmit} layout="vertical">
-          <Form.Item name="name" label="品类名称" rules={[{ required: true, message: '请输入品类名称' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">确定</Button>
-            <Button onClick={() => setModalVisible(false)} style={{ marginLeft: '8px' }}>取消</Button>
-          </Form.Item>
-        </Form>
+        <CategoryForm editingId={editingId} data={data} onSubmit={handleSubmit} onCancel={() => setModalVisible(false)} />
       </Modal>
     </div>
+  )
+}
+
+function CategoryForm({ editingId, data, onSubmit, onCancel }) {
+  const [form] = Form.useForm()
+  
+  useEffect(() => {
+    if (editingId) {
+      const record = data.find((item) => item.id === editingId)
+      if (record) {
+        form.setFieldsValue(record)
+      }
+    } else {
+      form.resetFields()
+    }
+  }, [editingId, data, form])
+
+  return (
+    <Form form={form} onFinish={onSubmit} layout="vertical">
+      <Form.Item name="name" label="品类名称" rules={[{ required: true, message: '请输入品类名称' }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="description" label="描述">
+        <Input.TextArea />
+      </Form.Item>
+      <Form.Item>
+        <Button type="primary" htmlType="submit">确定</Button>
+        <Button onClick={onCancel} style={{ marginLeft: '8px' }}>取消</Button>
+      </Form.Item>
+    </Form>
   )
 }
