@@ -23,6 +23,12 @@
                 #{category}
             </foreach>
         </if>
+        <if test="suppliers != null and suppliers.size() > 0">
+            AND supplier_name IN
+            <foreach collection="suppliers" item="supplier" open="(" separator="," close=")">
+                #{supplier}
+            </foreach>
+        </if>
         <if test="yearMonths != null and yearMonths.size() > 0">
             AND `year_month` IN
             <foreach collection="yearMonths" item="yearMonth" open="(" separator="," close=")">
@@ -34,11 +40,15 @@
     </select>
 
     <select id="selectAllCategories" resultType="string">
-        SELECT DISTINCT category FROM sp_monthly_assessment WHERE is_deleted = 0 AND category IS NOT NULL ORDER BY category
+        SELECT DISTINCT category FROM sp_supplier_pool WHERE is_deleted = 0 AND category IS NOT NULL ORDER BY category
     </select>
 
     <select id="selectAllYearMonths" resultType="string">
-        SELECT DISTINCT `year_month` FROM sp_monthly_assessment WHERE is_deleted = 0 ORDER BY `year_month` ASC
+        SELECT DISTINCT `year_month` FROM sp_monthly_assessment WHERE is_deleted = 0 AND status = 'LOCKED' ORDER BY `year_month` ASC
+    </select>
+
+    <select id="selectAllSuppliers" resultType="string">
+        SELECT DISTINCT name FROM sp_supplier_pool WHERE is_deleted = 0 AND name IS NOT NULL ORDER BY name
     </select>
 
     <select id="selectStats" parameterType="map" resultType="map">

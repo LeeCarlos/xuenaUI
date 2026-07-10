@@ -19,6 +19,8 @@ export default function Dashboard() {
 
   const [categories, setCategories] = useState([])
   const [selectedCategories, setSelectedCategories] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [selectedSuppliers, setSelectedSuppliers] = useState([])
   const [yearMonths, setYearMonths] = useState([])
   const [selectedYearMonths, setSelectedYearMonths] = useState([])
   const [aggregateType, setAggregateType] = useState('avg')
@@ -65,6 +67,15 @@ export default function Dashboard() {
     }
   }
 
+  const fetchSuppliers = async () => {
+    try {
+      const res = await overviewService.getSuppliers()
+      setSuppliers(res.data || [])
+    } catch {
+      console.error('Failed to fetch suppliers')
+    }
+  }
+
   const fetchTrendData = async () => {
     try {
       const params = {
@@ -72,6 +83,9 @@ export default function Dashboard() {
       }
       if (selectedCategories.length > 0) {
         params.categories = selectedCategories
+      }
+      if (selectedSuppliers.length > 0) {
+        params.suppliers = selectedSuppliers
       }
       if (selectedYearMonths.length > 0) {
         params.yearMonths = selectedYearMonths
@@ -86,12 +100,13 @@ export default function Dashboard() {
   useEffect(() => {
     fetchStats()
     fetchCategories()
+    fetchSuppliers()
     fetchYearMonths()
   }, [])
 
   useEffect(() => {
     fetchTrendData()
-  }, [selectedCategories, selectedYearMonths, aggregateType])
+  }, [selectedCategories, selectedSuppliers, selectedYearMonths, aggregateType])
 
   useEffect(() => {
     if (!chartRef.current || !trendData) return
@@ -163,6 +178,10 @@ export default function Dashboard() {
     setSelectedYearMonths(values)
   }
 
+  const handleSupplierChange = (values) => {
+    setSelectedSuppliers(values)
+  }
+
   const handleAggregateTypeChange = (value) => {
     setAggregateType(value)
   }
@@ -197,7 +216,7 @@ export default function Dashboard() {
         <div style={{ marginBottom: '16px' }}>
           <h3 style={{ marginBottom: '12px' }}>趋势数据分析</h3>
           <Row gutter={[16, 16]} align="middle">
-            <Col span={8}>
+            <Col span={6}>
               <div style={{ fontWeight: 500, marginBottom: '8px' }}>类别筛选</div>
               <CheckboxGroup
                 options={categories.map((c) => ({ label: c, value: c }))}
@@ -205,7 +224,24 @@ export default function Dashboard() {
                 onChange={handleCategoryChange}
               />
             </Col>
-            <Col span={8}>
+            <Col span={6}>
+              <div style={{ fontWeight: 500, marginBottom: '8px' }}>供应商筛选</div>
+              <Select
+                mode="multiple"
+                placeholder="选择供应商（默认全部）"
+                value={selectedSuppliers}
+                onChange={handleSupplierChange}
+                style={{ width: '100%' }}
+                maxTagCount="responsive"
+              >
+                {suppliers.map((supplier) => (
+                  <Option key={supplier} value={supplier}>
+                    {supplier}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={6}>
               <div style={{ fontWeight: 500, marginBottom: '8px' }}>月份筛选</div>
               <Select
                 mode="multiple"
@@ -222,7 +258,7 @@ export default function Dashboard() {
                 ))}
               </Select>
             </Col>
-            <Col span={8}>
+            <Col span={6}>
               <div style={{ fontWeight: 500, marginBottom: '8px' }}>聚合方式</div>
               <Select
                 value={aggregateType}

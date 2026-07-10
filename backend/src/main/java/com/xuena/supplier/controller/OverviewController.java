@@ -27,9 +27,10 @@ public class OverviewController {
     @GetMapping("/trend")
     public ResultVO<TrendDataVO> getTrend(
             @RequestParam(value = "categories", required = false) List<String> categories,
+            @RequestParam(value = "suppliers", required = false) List<String> suppliers,
             @RequestParam(value = "yearMonths", required = false) List<String> yearMonths,
             @RequestParam(value = "aggregateType", defaultValue = "avg") String aggregateType) {
-        TrendDataVO data = overviewService.getTrendData(categories, yearMonths, aggregateType);
+        TrendDataVO data = overviewService.getTrendData(categories, suppliers, yearMonths, aggregateType);
         return ResultVO.success(data);
     }
 
@@ -43,6 +44,12 @@ public class OverviewController {
     public ResultVO<List<String>> getYearMonths() {
         List<String> yearMonths = overviewService.getAllYearMonths();
         return ResultVO.success(yearMonths);
+    }
+
+    @GetMapping("/suppliers")
+    public ResultVO<List<String>> getSuppliers() {
+        List<String> suppliers = overviewService.getAllSuppliers();
+        return ResultVO.success(suppliers);
     }
 
     @GetMapping("/stats")

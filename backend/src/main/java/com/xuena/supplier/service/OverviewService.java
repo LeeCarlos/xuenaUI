@@ -9,11 +9,13 @@ import java.util.List;
 
 public interface OverviewService {
 
-    TrendDataVO getTrendData(List<String> categories, List<String> yearMonths, String aggregateType);
+    TrendDataVO getTrendData(List<String> categories, List<String> suppliers, List<String> yearMonths, String aggregateType);
 
     List<String> getAllCategories();
 
     List<String> getAllYearMonths();
+
+    List<String> getAllSuppliers();
 
     StatsVO getStats(String yearMonth);
 

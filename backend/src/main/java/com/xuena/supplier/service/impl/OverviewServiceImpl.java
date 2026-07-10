@@ -19,8 +19,8 @@ public class OverviewServiceImpl implements OverviewService {
     }
 
     @Override
-    public TrendDataVO getTrendData(List<String> categories, List<String> yearMonths, String aggregateType) {
-        List<Map<String, Object>> trendData = overviewMapper.selectTrendData(categories, yearMonths);
+    public TrendDataVO getTrendData(List<String> categories, List<String> suppliers, List<String> yearMonths, String aggregateType) {
+        List<Map<String, Object>> trendData = overviewMapper.selectTrendData(categories, suppliers, yearMonths);
 
         TrendDataVO result = new TrendDataVO();
         result.setCategories(categories != null ? categories : new ArrayList<>());
@@ -78,6 +78,11 @@ public class OverviewServiceImpl implements OverviewService {
     @Override
     public List<String> getAllYearMonths() {
         return overviewMapper.selectAllYearMonths();
+    }
+
+    @Override
+    public List<String> getAllSuppliers() {
+        return overviewMapper.selectAllSuppliers();
     }
 
     @Override

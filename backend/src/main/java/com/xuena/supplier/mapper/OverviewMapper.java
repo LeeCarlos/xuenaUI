@@ -11,12 +11,15 @@ public interface OverviewMapper {
 
     List<Map<String, Object>> selectTrendData(
             @Param("categories") List<String> categories,
+            @Param("suppliers") List<String> suppliers,
             @Param("yearMonths") List<String> yearMonths
     );
 
     List<String> selectAllCategories();
 
     List<String> selectAllYearMonths();
+
+    List<String> selectAllSuppliers();
 
     List<Map<String, Object>> selectStats(@Param("yearMonth") String yearMonth);
 

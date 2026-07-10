@@ -31,12 +31,14 @@
 
 - 输入：`categories=[牙刷, 牙膏]`
 - 操作：GET `/api/overview/trend`
+- 类别数据源：从供应商池（sp_supplier_pool）的 category 字段获取所有不重复的类别列表，通过 GET `/api/overview/categories` 接口提供
 - 预期：返回指定类别的趋势数据，支持多选类别
 
 **场景 3：按月份筛选趋势**
 
 - 输入：`yearMonths=[2026-03, 2026-04]`
 - 操作：GET `/api/overview/trend`
+- 月份数据源：从手动打分表（sp_monthly_assessment）中状态为已提交（LOCKED）的数据获取所有不重复的月份列表，通过 GET `/api/overview/year-months` 接口提供
 - 预期：返回指定月份的趋势数据，支持多选月份
 
 **场景 4：按类别和月份组合筛选**
@@ -57,18 +59,30 @@
 - 操作：GET `/api/overview/trend`
 - 预期：返回各维度的总分趋势
 
+**场景 7：按供应商下拉筛选趋势**
+
+- 输入：`suppliers=[供应商A, 供应商B]`
+- 操作：GET `/api/overview/trend`
+- 供应商数据源：从供应商池（sp_supplier_pool）的 供应商名称 字段获取所有不重复的供应商名称列表，通过 GET `/api/overview/suppliers` 接口提供
+- 预期：返回指定供应商的趋势数据，支持多选供应商
+
 ### 2.3 等级分布
 
 **场景 1：获取等级分布数据**
 
 - 操作：GET `/api/overview/grade-distribution`
-- 预期：返回各月份 A/B/C/D 等级的数量分布
+- 预期：返回各月份 A/B/C/D 等级的数量分布、供应商总数、各等级占比
 
 **场景 2：按类别筛选等级分布**
 
 - 输入：`category=牙刷`
 - 操作：GET `/api/overview/grade-distribution`
-- 预期：返回牙刷类别的等级分布
+- 预期：返回牙刷类别的等级分布、供应商总数、各等级占比
+
+**场景 3：等级分布汇总表格**
+
+- 操作：GET `/api/overview/grade-distribution`
+- 预期：返回等级分布数据用于表格展示，包含每个月的供应商总数、A/B/C/D级数量及占比（占比用黑色字体显示，不做底色提示）
 
 ### 2.4 维度平均分
 
@@ -82,6 +96,11 @@
 - 输入：`yearMonths=[2026-03, 2026-04]`
 - 操作：GET `/api/overview/dimension-avg`
 - 预期：返回指定月份的维度平均分
+
+**场景 3：维度平均分对比柱状图**
+
+- 操作：GET `/api/overview/dimension-avg`
+- 预期：返回品质/成本/交货/服务四个板块所有提交月份平均分的数据，用于柱状图展示
 
 ## 3. 数据结构
 
@@ -149,14 +168,29 @@
     {
       "yearMonth": "string",
       "monthLabel": "string",
+      "totalCount": "number",
       "gradeA": "number",
+      "gradeAPercent": "string",
       "gradeB": "number",
+      "gradeBPercent": "string",
       "gradeC": "number",
-      "gradeD": "number"
+      "gradeCPercent": "string",
+      "gradeD": "number",
+      "gradeDPercent": "string"
     }
   ]
 }
 ```
+
+**参数说明**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| yearMonth | string | 月份（格式：YYYY-MM） |
+| monthLabel | string | 月份标签（格式：X月） |
+| totalCount | number | 供应商总数 |
+| gradeA/B/C/D | number | 各等级供应商数量 |
+| gradeAPercent/BPercent/CPercent/DPercent | string | 各等级占比（格式：XX.X%），黑色字体显示，不做底色提示 |
 
 ### 3.4 维度平均分响应
 
@@ -167,6 +201,7 @@
   "data": [
     {
       "yearMonth": "string",
+      "monthLabel": "string",
       "dimensionA": "number",
       "dimensionB": "number",
       "dimensionC": "number",
@@ -176,11 +211,24 @@
 }
 ```
 
+**参数说明**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| yearMonth | string | 月份（格式：YYYY-MM） |
+| monthLabel | string | 月份标签（格式：X月） |
+| dimensionA | number | 品质考核平均分 |
+| dimensionB | number | 成本考核平均分 |
+| dimensionC | number | 交货考核平均分 |
+| dimensionD | number | 服务考核平均分 |
+
 ## 4. 图表要求
 
 | 图表类型 | 用途 | 数据源 |
 |----------|------|--------|
 | 折线图 | 绩效趋势 | `/api/overview/trend` |
 | 柱状图 | 等级分布 | `/api/overview/grade-distribution` |
+| 表格 | 等级分布汇总（供应商总数、各等级数量及占比） | `/api/overview/grade-distribution` |
+| 柱状图 | 各维度平均分对比（品质/成本/交货/服务） | `/api/overview/dimension-avg` |
 | 雷达图 | 维度对比 | `/api/compare/radar` |
 | 热力图 | 得分率对比 | `/api/compare/heatmap` |

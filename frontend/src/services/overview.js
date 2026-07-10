@@ -7,6 +7,15 @@ export default {
   getTrend(params) {
     return request.get('/overview/trend', { params })
   },
+  getCategories() {
+    return request.get('/overview/categories')
+  },
+  getSuppliers() {
+    return request.get('/overview/suppliers')
+  },
+  getYearMonths() {
+    return request.get('/overview/year-months')
+  },
   getGradeDistribution(params) {
     return request.get('/overview/grade-distribution', { params })
   },
