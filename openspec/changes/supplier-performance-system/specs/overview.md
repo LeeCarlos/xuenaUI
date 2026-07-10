@@ -227,7 +227,7 @@
 | 图表类型 | 用途 | 数据源 |
 |----------|------|--------|
 | 折线图 | 绩效趋势 | `/api/overview/trend` |
-| 柱状图 | 等级分布 | `/api/overview/grade-distribution` |
+| 堆积柱状图 | 等级分布 | `/api/overview/grade-distribution` |
 | 表格 | 等级分布汇总（供应商总数、各等级数量及占比） | `/api/overview/grade-distribution` |
 | 柱状图 | 各维度平均分对比（品质/成本/交货/服务） | `/api/overview/dimension-avg` |
 | 雷达图 | 维度对比 | `/api/compare/radar` |

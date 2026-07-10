@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import { Card, Row, Col, Statistic, Select, Checkbox } from 'antd'
-import { UserOutlined, TrendingUpOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Statistic, Select, Checkbox, Table } from 'antd'
+import { UserOutlined, ArrowUpOutlined, FileTextOutlined, AlertOutlined } from '@ant-design/icons'
 import * as echarts from 'echarts'
 import poolService from '../services/pool'
 import assessmentService from '../services/assessment'
@@ -24,9 +24,17 @@ export default function Dashboard() {
   const [yearMonths, setYearMonths] = useState([])
   const [selectedYearMonths, setSelectedYearMonths] = useState([])
   const [aggregateType, setAggregateType] = useState('avg')
+
   const [trendData, setTrendData] = useState(null)
-  const chartRef = useRef(null)
-  const chartInstance = useRef(null)
+  const [gradeDistributionData, setGradeDistributionData] = useState(null)
+  const [dimensionAvgData, setDimensionAvgData] = useState(null)
+
+  const trendChartRef = useRef(null)
+  const trendChartInstance = useRef(null)
+  const gradeChartRef = useRef(null)
+  const gradeChartInstance = useRef(null)
+  const dimensionChartRef = useRef(null)
+  const dimensionChartInstance = useRef(null)
 
   const fetchStats = async () => {
     try {
@@ -97,6 +105,32 @@ export default function Dashboard() {
     }
   }
 
+  const fetchGradeDistribution = async () => {
+    try {
+      const params = {}
+      if (selectedCategories.length === 1) {
+        params.category = selectedCategories[0]
+      }
+      const res = await overviewService.getGradeDistribution(params)
+      setGradeDistributionData(res.data)
+    } catch {
+      console.error('Failed to fetch grade distribution')
+    }
+  }
+
+  const fetchDimensionAvg = async () => {
+    try {
+      const params = {}
+      if (selectedYearMonths.length > 0) {
+        params.yearMonths = selectedYearMonths
+      }
+      const res = await overviewService.getDimensionAvg(params)
+      setDimensionAvgData(res.data)
+    } catch {
+      console.error('Failed to fetch dimension avg')
+    }
+  }
+
   useEffect(() => {
     fetchStats()
     fetchCategories()
@@ -106,13 +140,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchTrendData()
+    fetchGradeDistribution()
+    fetchDimensionAvg()
   }, [selectedCategories, selectedSuppliers, selectedYearMonths, aggregateType])
 
   useEffect(() => {
-    if (!chartRef.current || !trendData) return
+    if (!trendChartRef.current || !trendData) return
 
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current)
+    if (!trendChartInstance.current) {
+      trendChartInstance.current = echarts.init(trendChartRef.current)
     }
 
     const option = {
@@ -158,10 +194,10 @@ export default function Dashboard() {
       })),
     }
 
-    chartInstance.current.setOption(option)
+    trendChartInstance.current.setOption(option)
 
     const handleResize = () => {
-      chartInstance.current?.resize()
+      trendChartInstance.current?.resize()
     }
     window.addEventListener('resize', handleResize)
 
@@ -169,6 +205,150 @@ export default function Dashboard() {
       window.removeEventListener('resize', handleResize)
     }
   }, [trendData, aggregateType])
+
+  useEffect(() => {
+    if (!gradeChartRef.current || !gradeDistributionData) return
+
+    if (!gradeChartInstance.current) {
+      gradeChartInstance.current = echarts.init(gradeChartRef.current)
+    }
+
+    const xAxisData = gradeDistributionData.map((item) => item.monthLabel)
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+      },
+      legend: {
+        data: ['A级', 'B级', 'C级', 'D级'],
+        bottom: 10,
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '15%',
+        top: '10%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+      },
+      yAxis: {
+        type: 'value',
+        name: '数量',
+      },
+      series: [
+        {
+          name: 'A级',
+          type: 'bar',
+          data: gradeDistributionData.map((item) => item.gradeA),
+          itemStyle: { color: '#52c41a' },
+        },
+        {
+          name: 'B级',
+          type: 'bar',
+          data: gradeDistributionData.map((item) => item.gradeB),
+          itemStyle: { color: '#1890ff' },
+        },
+        {
+          name: 'C级',
+          type: 'bar',
+          data: gradeDistributionData.map((item) => item.gradeC),
+          itemStyle: { color: '#faad14' },
+        },
+        {
+          name: 'D级',
+          type: 'bar',
+          data: gradeDistributionData.map((item) => item.gradeD),
+          itemStyle: { color: '#ff4d4f' },
+        },
+      ],
+    }
+
+    gradeChartInstance.current.setOption(option)
+
+    const handleResize = () => {
+      gradeChartInstance.current?.resize()
+    }
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [gradeDistributionData])
+
+  useEffect(() => {
+    if (!dimensionChartRef.current || !dimensionAvgData) return
+
+    if (!dimensionChartInstance.current) {
+      dimensionChartInstance.current = echarts.init(dimensionChartRef.current)
+    }
+
+    const xAxisData = dimensionAvgData.map((item) => item.monthLabel)
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+      },
+      legend: {
+        data: ['品质考核', '成本考核', '交货考核', '服务考核'],
+        bottom: 10,
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '15%',
+        top: '10%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: xAxisData,
+      },
+      yAxis: {
+        type: 'value',
+        name: '平均分',
+      },
+      series: [
+        {
+          name: '品质考核',
+          type: 'bar',
+          data: dimensionAvgData.map((item) => item.dimensionA),
+          itemStyle: { color: '#1890ff' },
+        },
+        {
+          name: '成本考核',
+          type: 'bar',
+          data: dimensionAvgData.map((item) => item.dimensionB),
+          itemStyle: { color: '#52c41a' },
+        },
+        {
+          name: '交货考核',
+          type: 'bar',
+          data: dimensionAvgData.map((item) => item.dimensionC),
+          itemStyle: { color: '#faad14' },
+        },
+        {
+          name: '服务考核',
+          type: 'bar',
+          data: dimensionAvgData.map((item) => item.dimensionD),
+          itemStyle: { color: '#722ed1' },
+        },
+      ],
+    }
+
+    dimensionChartInstance.current.setOption(option)
+
+    const handleResize = () => {
+      dimensionChartInstance.current?.resize()
+    }
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [dimensionAvgData])
 
   const handleCategoryChange = (values) => {
     setSelectedCategories(values)
@@ -186,6 +366,51 @@ export default function Dashboard() {
     setAggregateType(value)
   }
 
+  const gradeTableColumns = [
+    { title: '月份', dataIndex: 'monthLabel', key: 'monthLabel' },
+    { title: '供应商总数', dataIndex: 'totalCount', key: 'totalCount' },
+    {
+      title: 'A级',
+      key: 'gradeA',
+      render: (_, record) => (
+        <span>
+          <span>{record.gradeA}</span>
+          <span style={{ color: '#333', marginLeft: '8px' }}>({record.gradeAPercent})</span>
+        </span>
+      ),
+    },
+    {
+      title: 'B级',
+      key: 'gradeB',
+      render: (_, record) => (
+        <span>
+          <span>{record.gradeB}</span>
+          <span style={{ color: '#333', marginLeft: '8px' }}>({record.gradeBPercent})</span>
+        </span>
+      ),
+    },
+    {
+      title: 'C级',
+      key: 'gradeC',
+      render: (_, record) => (
+        <span>
+          <span>{record.gradeC}</span>
+          <span style={{ color: '#333', marginLeft: '8px' }}>({record.gradeCPercent})</span>
+        </span>
+      ),
+    },
+    {
+      title: 'D级',
+      key: 'gradeD',
+      render: (_, record) => (
+        <span>
+          <span>{record.gradeD}</span>
+          <span style={{ color: '#333', marginLeft: '8px' }}>({record.gradeDPercent})</span>
+        </span>
+      ),
+    },
+  ]
+
   return (
     <div>
       <h2 style={{ marginBottom: '24px' }}>总览</h2>
@@ -197,7 +422,7 @@ export default function Dashboard() {
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="启用供应商" value={stats.activeSupplierCount} prefix={<TrendingUpOutlined />} />
+            <Statistic title="启用供应商" value={stats.activeSupplierCount} prefix={<ArrowUpOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
@@ -271,7 +496,26 @@ export default function Dashboard() {
             </Col>
           </Row>
         </div>
-        <div ref={chartRef} style={{ height: '400px' }} />
+        <div ref={trendChartRef} style={{ height: '400px' }} />
+      </Card>
+
+      <Card style={{ marginTop: '24px' }}>
+        <h3 style={{ marginBottom: '16px' }}>等级分布</h3>
+        <div ref={gradeChartRef} style={{ height: '300px' }} />
+        <div style={{ marginTop: '24px' }}>
+          <Table
+            columns={gradeTableColumns}
+            dataSource={gradeDistributionData}
+            rowKey="yearMonth"
+            bordered
+            pagination={false}
+          />
+        </div>
+      </Card>
+
+      <Card style={{ marginTop: '24px' }}>
+        <h3 style={{ marginBottom: '16px' }}>各维度平均分对比</h3>
+        <div ref={dimensionChartRef} style={{ height: '350px' }} />
       </Card>
     </div>
   )

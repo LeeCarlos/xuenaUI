@@ -120,10 +120,20 @@ public class OverviewServiceImpl implements OverviewService {
             GradeDistributionVO vo = new GradeDistributionVO();
             vo.setYearMonth((String) row.get("yearMonth"));
             vo.setMonthLabel(((String) row.get("yearMonth")).substring(5) + "月");
-            vo.setGradeA(getInteger(row.get("gradeA")));
-            vo.setGradeB(getInteger(row.get("gradeB")));
-            vo.setGradeC(getInteger(row.get("gradeC")));
-            vo.setGradeD(getInteger(row.get("gradeD")));
+            Integer gradeA = getInteger(row.get("gradeA"));
+            Integer gradeB = getInteger(row.get("gradeB"));
+            Integer gradeC = getInteger(row.get("gradeC"));
+            Integer gradeD = getInteger(row.get("gradeD"));
+            Integer totalCount = gradeA + gradeB + gradeC + gradeD;
+            vo.setTotalCount(totalCount);
+            vo.setGradeA(gradeA);
+            vo.setGradeB(gradeB);
+            vo.setGradeC(gradeC);
+            vo.setGradeD(gradeD);
+            vo.setGradeAPercent(calculatePercent(gradeA, totalCount));
+            vo.setGradeBPercent(calculatePercent(gradeB, totalCount));
+            vo.setGradeCPercent(calculatePercent(gradeC, totalCount));
+            vo.setGradeDPercent(calculatePercent(gradeD, totalCount));
             result.add(vo);
         }
 
@@ -138,6 +148,7 @@ public class OverviewServiceImpl implements OverviewService {
         for (Map<String, Object> row : data) {
             DimensionAvgVO vo = new DimensionAvgVO();
             vo.setYearMonth((String) row.get("yearMonth"));
+            vo.setMonthLabel(((String) row.get("yearMonth")).substring(5) + "月");
             vo.setDimensionA(getDouble(row.get("dimensionA")));
             vo.setDimensionB(getDouble(row.get("dimensionB")));
             vo.setDimensionC(getDouble(row.get("dimensionC")));
@@ -146,6 +157,13 @@ public class OverviewServiceImpl implements OverviewService {
         }
 
         return result;
+    }
+
+    private String calculatePercent(Integer count, Integer total) {
+        if (total == null || total == 0) {
+            return "0.0%";
+        }
+        return String.format("%.1f%%", count * 100.0 / total);
     }
 
     private TrendSeriesVO createSeries(String name, String type, List<Double> data, String dimension) {

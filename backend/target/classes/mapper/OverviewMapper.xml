@@ -75,7 +75,7 @@
             COUNT(CASE WHEN grade = 'C' THEN 1 END) as gradeC,
             COUNT(CASE WHEN grade = 'D' THEN 1 END) as gradeD
         FROM sp_monthly_assessment
-        WHERE is_deleted = 0
+        WHERE is_deleted = 0 AND status = 'LOCKED'
         <if test="category != null and category != ''">AND category = #{category}</if>
         GROUP BY `year_month`
         ORDER BY `year_month` ASC
@@ -89,7 +89,7 @@
             ROUND(AVG(dimension_c), 1) as dimensionC,
             ROUND(AVG(dimension_d), 1) as dimensionD
         FROM sp_monthly_assessment
-        WHERE is_deleted = 0
+        WHERE is_deleted = 0 AND status = 'LOCKED'
         <if test="yearMonths != null and yearMonths.size() > 0">
             AND `year_month` IN
             <foreach collection="yearMonths" item="yearMonth" open="(" separator="," close=")">
