@@ -1,5 +1,5 @@
-INSERT INTO sp_user (username, password, department, real_name, email, is_enabled) VALUES ('admin', '$2a$10$rBZp4wF6wRQkH6s7qX3KCOqF7S5C9L4N3H8J6K7L8M9N0O1P2Q3R4S5T6U7V8W9X0Y1Z2', '计划', '管理员', 'admin@xuena.com', 1);
-INSERT INTO sp_user (username, password, department, real_name, email, is_enabled) VALUES ('user1', '$2a$10$rBZp4wF6wRQkH6s7qX3KCOqF7S5C9L4N3H8J6K7L8M9N0O1P2Q3R4S5T6U7V8W9X0Y1Z2', '质量', '张三', 'user1@xuena.com', 1);
+INSERT INTO sp_user (username, password, department, real_name, email, is_enabled) VALUES ('admin', '$2a$10$.D/1FzKoZGAV.qv7dT.98OwxKDTqM5abFpREzvAluI/Hbjgu2dW42', '计划', '管理员', 'admin@xuena.com', 1);
+INSERT INTO sp_user (username, password, department, real_name, email, is_enabled) VALUES ('user1', '$2a$10$VLvJ8LD5L23Wt2T0uxVXBO1Su1hXusdRS8H/dRnj7wbXXfUP6m/gi', '质量', '张三', 'user1@xuena.com', 1);
 
 INSERT INTO sp_role (name, code, description, is_system, is_enabled) VALUES ('管理员', 'admin', '系统管理员', 1, 1);
 INSERT INTO sp_role (name, code, description, is_system, is_enabled) VALUES ('普通用户', 'user', '普通用户', 1, 1);
