@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xuena.supplier.mapper.DepartmentScoreMapper">
-    <select id="selectById" parameterType="long" resultType="com.xuena.supplier.entity.DepartmentScoreDO">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.DepartmentScoreMapper">
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.DepartmentScoreDO">
         SELECT * FROM sp_department_score WHERE id = #{id} AND is_deleted = 0
     </select>
     
@@ -13,10 +13,10 @@
         ORDER BY `year_month` DESC, gmt_create DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.DepartmentScoreDO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sp_department_score (`year_month`, supplier_name, department, dimension_group,
+    <insert id="insert" parameterType="com.xuena.supplier.entity.DepartmentScoreDO">
+        INSERT INTO sp_department_score (id, `year_month`, supplier_name, department, dimension_group,
             dimension_score, sub_scores, exception_reason, status, file_name)
-        VALUES (#{yearMonth}, #{supplierName}, #{department}, #{dimensionGroup},
+        VALUES (#{id}, #{yearMonth}, #{supplierName}, #{department}, #{dimensionGroup},
             #{dimensionScore}, #{subScores}, #{exceptionReason}, #{status}, #{fileName})
     </insert>
     
@@ -36,7 +36,7 @@
         WHERE id = #{id}
     </update>
     
-    <update id="delete" parameterType="long">
+    <update id="delete" parameterType="string">
         UPDATE sp_department_score SET is_deleted = 1 WHERE id = #{id}
     </update>
     

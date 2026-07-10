@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xuena.supplier.mapper.SummaryMapper">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.SummaryMapper">
 
     <select id="countTotalSuppliers" resultType="int">
         SELECT COUNT(*) FROM sp_supplier_pool WHERE is_deleted = 0

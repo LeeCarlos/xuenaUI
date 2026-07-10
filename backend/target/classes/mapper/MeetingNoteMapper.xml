@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xuena.supplier.mapper.MeetingNoteMapper">
-    <select id="selectById" parameterType="long" resultType="com.xuena.supplier.entity.MeetingNoteDO">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.MeetingNoteMapper">
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.MeetingNoteDO">
         SELECT * FROM sp_meeting_note WHERE id = #{id} AND is_deleted = 0
     </select>
     
@@ -12,8 +12,8 @@
     </select>
     
     <insert id="insert" parameterType="com.xuena.supplier.entity.MeetingNoteDO">
-        INSERT INTO sp_meeting_note (supplier_name, month_from, month_to, note)
-        VALUES (#{supplierName}, #{monthFrom}, #{monthTo}, #{note})
+        INSERT INTO sp_meeting_note (id, supplier_name, month_from, month_to, note)
+        VALUES (#{id}, #{supplierName}, #{monthFrom}, #{monthTo}, #{note})
     </insert>
     
     <update id="update" parameterType="com.xuena.supplier.entity.MeetingNoteDO">
@@ -27,7 +27,7 @@
         WHERE id = #{id}
     </update>
     
-    <update id="delete" parameterType="long">
+    <update id="delete" parameterType="string">
         UPDATE sp_meeting_note SET is_deleted = 1 WHERE id = #{id}
     </update>
 </mapper>

@@ -10,19 +10,20 @@ spring:
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.xuena.supplier.entity
+  type-aliases-package: com.xuena.supplier.domain.entity
   configuration:
     map-underscore-to-camel-case: true
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql
 
 jwt:
   secret: xuena-supplier-performance-jwt-secret-key-2026
   expire: 3600000
   refresh-expire: 604800000
-
-logging:
-  level:
-    com.xuena.supplier: DEBUG
-    org.mybatis: DEBUG
 
 cors:
   allowed-origins:

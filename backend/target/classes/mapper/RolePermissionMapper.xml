@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.xuena.supplier.mapper.RolePermissionMapper">
-    <select id="selectPermissionIdsByRoleId" parameterType="long" resultType="long">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.RolePermissionMapper">
+    <select id="selectPermissionIdsByRoleId" parameterType="string" resultType="string">
         SELECT permission_id FROM sp_role_permission WHERE role_id = #{roleId}
     </select>
     
@@ -9,7 +9,7 @@
         INSERT INTO sp_role_permission (role_id, permission_id) VALUES (#{roleId}, #{permissionId})
     </insert>
     
-    <delete id="deleteByRoleId" parameterType="long">
+    <delete id="deleteByRoleId" parameterType="string">
         DELETE FROM sp_role_permission WHERE role_id = #{roleId}
     </delete>
     
