@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, BanOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, CheckCircleFilled } from '@ant-design/icons'
 import poolService from '../services/pool'
 import categoryService from '../services/category'
 
@@ -112,9 +112,9 @@ export default function SupplierPool() {
             <Button icon={<DeleteOutlined />} size="small" danger>删除</Button>
           </Popconfirm>
           {record.isDisabled === 0 ? (
-            <Button icon={<BanOutlined />} size="small" onClick={() => handleDisable(record.id)}>禁用</Button>
+            <Button icon={<StopOutlined />} size="small" onClick={() => handleDisable(record.id)}>禁用</Button>
           ) : (
-            <Button icon={<CheckCircleOutlined />} size="small" onClick={() => handleEnable(record.id)}>启用</Button>
+            <Button icon={<CheckCircleFilled />} size="small" onClick={() => handleEnable(record.id)}>启用</Button>
           )}
         </Space>
       ),

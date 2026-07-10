@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   DashboardOutlined,
   BarChartOutlined,
-  TrendingUpOutlined,
+  ArrowUpOutlined,
   FileTextOutlined,
   DatabaseOutlined,
   EditOutlined,
@@ -18,7 +18,7 @@ import { useStore } from '../../store'
 const menuIconMap = {
   dashboard: DashboardOutlined,
   compare: BarChartOutlined,
-  rank: TrendingUpOutlined,
+  rank: ArrowUpOutlined,
   detail: FileTextOutlined,
   pool: DatabaseOutlined,
   scoring: EditOutlined,
