@@ -1,17 +1,21 @@
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\enums\DimensionEnum.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\CompareRadarVO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\OverviewController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\SupplierPoolDO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\AuthService.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\OverviewService.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\RoleMapper.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\SummaryMapper.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\UserRoleDO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\enums\GradeEnum.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\UserMapper.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\TrendSeriesVO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\MenuDO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\MonthlyAssessmentServiceImpl.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\SummaryController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\RoleMenuMapper.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\enums\DepartmentEnum.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\CompareService.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\LoginResponse.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\AuthController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\DimensionAvgVO.java
@@ -27,9 +31,13 @@ D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\Overv
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\enums\StatusEnum.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\TrendDataVO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\MeetingNoteDO.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\SummaryVO.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\CompareMapper.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\SupplierPoolMapper.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\CompareServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\MeetingNoteServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\SupplierController.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\vo\response\CompareHeatmapVO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\DepartmentScoreController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\DepartmentScoreServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\exception\GlobalExceptionHandler.java
@@ -37,6 +45,7 @@ D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\UserRoleMap
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\CategoryServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\MenuMapper.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\config\MyBatisConfig.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\CompareController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\AuthServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\CategoryDO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\CategoryService.java
@@ -53,6 +62,7 @@ D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\SupplierApplicatio
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\CategoryController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\MonthlyAssessmentDO.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\RoleDO.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\impl\SummaryServiceImpl.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\controller\UploadController.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\config\SecurityConfig.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\entity\UserDO.java
@@ -69,3 +79,4 @@ D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\exception\Business
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\util\JwtUtil.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\DepartmentScoreMapper.java
 D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\mapper\RolePermissionMapper.java
+D:\workspase\xuenaUI\backend\src\main\java\com\xuena\supplier\service\SummaryService.java

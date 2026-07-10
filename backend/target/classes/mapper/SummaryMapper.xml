@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuena.supplier.mapper.SummaryMapper">
+
+    <select id="countTotalSuppliers" resultType="int">
+        SELECT COUNT(*) FROM sp_supplier_pool WHERE is_deleted = 0
+    </select>
+
+    <select id="countActiveSuppliers" resultType="int">
+        SELECT COUNT(*) FROM sp_supplier_pool WHERE is_deleted = 0 AND is_disabled = 0
+    </select>
+
+    <select id="countAssessments" resultType="int">
+        SELECT COUNT(*) FROM sp_monthly_assessment WHERE is_deleted = 0
+        <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
+    </select>
+
+    <select id="countCompletedAssessments" resultType="int">
+        SELECT COUNT(*) FROM sp_monthly_assessment WHERE is_deleted = 0 AND status = 'LOCKED'
+        <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
+    </select>
+
+    <select id="calculateAvgScore" resultType="double">
+        SELECT COALESCE(AVG(total_score), 0) FROM sp_monthly_assessment 
+        WHERE is_deleted = 0 AND status = 'LOCKED'
+        <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
+    </select>
+
+    <select id="selectDepartmentSummaries" resultType="com.xuena.supplier.vo.response.SummaryVO$DepartmentSummary">
+        SELECT department,
+               COUNT(*) as score_count,
+               COALESCE(AVG(dimension_score), 0) as avg_score
+        FROM sp_department_score
+        WHERE is_deleted = 0
+        <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
+        GROUP BY department
+        ORDER BY department
+    </select>
+
+    <select id="selectCategorySummaries" resultType="com.xuena.supplier.vo.response.SummaryVO$CategorySummary">
+        SELECT sp.category,
+               COUNT(DISTINCT sp.id) as supplier_count,
+               COALESCE(AVG(ma.total_score), 0) as avg_score,
+               SUM(CASE WHEN ma.grade = 'A' THEN 1 ELSE 0 END) as grade_a_count,
+               SUM(CASE WHEN ma.grade = 'D' THEN 1 ELSE 0 END) as grade_d_count
+        FROM sp_supplier_pool sp
+        LEFT JOIN sp_monthly_assessment ma ON sp.name = ma.supplier_name
+            <if test="yearMonth != null and yearMonth != ''">AND ma.year_month = #{yearMonth}</if>
+        WHERE sp.is_deleted = 0
+        GROUP BY sp.category
+        ORDER BY sp.category
+    </select>
+
+</mapper>

@@ -16,21 +16,25 @@ import {
 import { useStore } from '../../store'
 
 const menuIconMap = {
-  dashboard: DashboardOutlined,
-  compare: BarChartOutlined,
-  rank: ArrowUpOutlined,
-  detail: FileTextOutlined,
-  pool: DatabaseOutlined,
-  scoring: EditOutlined,
-  user: UserOutlined,
-  role: FolderOutlined,
-  permission: KeyOutlined,
-  menu: SettingOutlined,
+  DashboardOutlined: DashboardOutlined,
+  BarChartOutlined: BarChartOutlined,
+  ArrowUpOutlined: ArrowUpOutlined,
+  FileTextOutlined: FileTextOutlined,
+  DatabaseOutlined: DatabaseOutlined,
+  EditOutlined: EditOutlined,
+  SettingOutlined: SettingOutlined,
+  UserOutlined: UserOutlined,
+  FolderOutlined: FolderOutlined,
+  KeyOutlined: KeyOutlined,
+  Dashboard: DashboardOutlined,
+  User: UserOutlined,
+  BarChart: BarChartOutlined,
+  BarChart: BarChartOutlined,
 }
 
 function renderMenuItems(menus, navigate) {
   return menus.map((menu) => {
-    const Icon = menuIconMap[menu.code] || SettingOutlined
+    const Icon = menuIconMap[menu.icon] || SettingOutlined
     
     if (menu.children && menu.children.length > 0) {
       return (

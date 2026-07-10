@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuena.supplier.mapper.CompareMapper">
+
+    <select id="selectSupplierDimensionScores" resultType="double">
+        SELECT COALESCE(AVG(CASE WHEN dimension_group = '品质考核' THEN dimension_score END), 0) as dimA,
+               COALESCE(AVG(CASE WHEN dimension_group = '成本考核' THEN dimension_score END), 0) as dimB,
+               COALESCE(AVG(CASE WHEN dimension_group = '交货考核' THEN dimension_score END), 0) as dimC,
+               COALESCE(AVG(CASE WHEN dimension_group = '服务考核' THEN dimension_score END), 0) as dimD
+        FROM sp_department_score
+        WHERE supplier_name = #{supplierName}
+        <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
+        AND is_deleted = 0
+    </select>
+
+    <select id="selectSuppliersByCategory" resultType="string">
+        SELECT DISTINCT s.name FROM sp_supplier_pool s
+        WHERE s.category = #{category} AND s.is_deleted = 0 AND s.is_disabled = 0
+        ORDER BY s.name
+    </select>
+
+    <select id="selectSupplierDimensionHeatmap" resultType="list">
+        SELECT s.name,
+               COALESCE(AVG(CASE WHEN ds.dimension_group = '品质考核' THEN ds.dimension_score END), 0) as dimA,
+               COALESCE(AVG(CASE WHEN ds.dimension_group = '成本考核' THEN ds.dimension_score END), 0) as dimB,
+               COALESCE(AVG(CASE WHEN ds.dimension_group = '交货考核' THEN ds.dimension_score END), 0) as dimC,
+               COALESCE(AVG(CASE WHEN ds.dimension_group = '服务考核' THEN ds.dimension_score END), 0) as dimD
+        FROM sp_supplier_pool s
+        LEFT JOIN sp_department_score ds ON s.name = ds.supplier_name
+            <if test="yearMonth != null and yearMonth != ''">AND ds.year_month = #{yearMonth}</if>
+        WHERE s.category = #{category} AND s.is_deleted = 0 AND s.is_disabled = 0
+        GROUP BY s.name
+        ORDER BY s.name
+    </select>
+
+    <select id="selectAllCategories" resultType="string">
+        SELECT DISTINCT category FROM sp_supplier_pool WHERE is_deleted = 0 ORDER BY category
+    </select>
+
+    <select id="selectAllSuppliers" resultType="string">
+        SELECT DISTINCT name FROM sp_supplier_pool WHERE is_deleted = 0 AND is_disabled = 0 ORDER BY name
+    </select>
+
+</mapper>

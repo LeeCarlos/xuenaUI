@@ -8,6 +8,8 @@ import Category from './pages/Category'
 import Assessment from './pages/Assessment'
 import DepartmentScore from './pages/DepartmentScore'
 import MeetingNote from './pages/MeetingNote'
+import Compare from './pages/Compare'
+import Summary from './pages/Summary'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
@@ -36,6 +38,8 @@ function App() {
         <Route path="/assessment" element={<PrivateRoute><Layout><Assessment /></Layout></PrivateRoute>} />
         <Route path="/department-score" element={<PrivateRoute><Layout><DepartmentScore /></Layout></PrivateRoute>} />
         <Route path="/meeting-note" element={<PrivateRoute><Layout><MeetingNote /></Layout></PrivateRoute>} />
+        <Route path="/compare" element={<PrivateRoute><Layout><Compare /></Layout></PrivateRoute>} />
+        <Route path="/summary" element={<PrivateRoute><Layout><Summary /></Layout></PrivateRoute>} />
         <Route path="/*" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
       </Routes>
     </StoreProvider>
