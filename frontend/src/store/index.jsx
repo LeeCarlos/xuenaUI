@@ -1,8 +1,10 @@
 import { createContext, useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const StoreContext = createContext()
 
 export function StoreProvider({ children }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user')
     return saved ? JSON.parse(saved) : null
@@ -47,6 +49,7 @@ export function StoreProvider({ children }) {
     setMenus([])
     setPermissions([])
     setRoles([])
+    navigate('/login')
   }
 
   return (

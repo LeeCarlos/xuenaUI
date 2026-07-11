@@ -19,6 +19,10 @@ public class DepartmentScoreDO {
     private String status;
     private String fileName;
     private Integer isDeleted;
-    private Date gmtCreate;
-    private Date gmtModified;
+    private String createName;
+    private String createId;
+    private Date createDate;
+    private String updateName;
+    private String updateId;
+    private Date updateDate;
 }

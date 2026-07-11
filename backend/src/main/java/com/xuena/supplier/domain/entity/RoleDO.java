@@ -14,6 +14,10 @@ public class RoleDO {
     private Integer isSystem;
     private Integer isEnabled;
     private Integer isDeleted;
-    private Date gmtCreate;
-    private Date gmtModified;
+    private String createName;
+    private String createId;
+    private Date createDate;
+    private String updateName;
+    private String updateId;
+    private Date updateDate;
 }

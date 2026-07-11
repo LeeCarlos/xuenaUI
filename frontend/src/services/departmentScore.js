@@ -22,4 +22,16 @@ export default {
   complete(id) {
     return request.post(`/department-score/${id}/complete`)
   },
+  export(params) {
+    return request.get('/department-score/export', { params, responseType: 'blob' }).then(res => {
+      const url = window.URL.createObjectURL(new Blob([res]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `部门打分列表_${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    })
+  },
 }

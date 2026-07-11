@@ -1,33 +1,35 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xuena.supplier.infrastructure.mapper.SupplierPoolMapper">
-    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.SupplierPoolDO">
-        SELECT * FROM sp_supplier_pool WHERE id = #{id} AND is_deleted = 0
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.domain.entity.SupplierPoolDO">
+        SELECT id, name, category, is_disabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_supplier_pool WHERE id = #{id} AND is_deleted = 0
     </select>
     
-    <select id="selectByName" parameterType="string" resultType="com.xuena.supplier.entity.SupplierPoolDO">
-        SELECT * FROM sp_supplier_pool WHERE name = #{name} AND is_deleted = 0
+    <select id="selectByName" parameterType="string" resultType="com.xuena.supplier.domain.entity.SupplierPoolDO">
+        SELECT id, name, category, is_disabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_supplier_pool WHERE name = #{name} AND is_deleted = 0
     </select>
     
-    <select id="selectList" resultType="com.xuena.supplier.entity.SupplierPoolDO">
-        SELECT * FROM sp_supplier_pool WHERE is_deleted = 0
+    <select id="selectList" resultType="com.xuena.supplier.domain.entity.SupplierPoolDO">
+        SELECT id, name, category, is_disabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_supplier_pool WHERE is_deleted = 0
         <if test="name != null and name != ''">AND name LIKE CONCAT('%', #{name}, '%')</if>
         <if test="category != null and category != ''">AND category = #{category}</if>
         <if test="isDisabled != null">AND is_disabled = #{isDisabled}</if>
-        ORDER BY gmt_create DESC
+        ORDER BY create_date DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.SupplierPoolDO">
-        INSERT INTO sp_supplier_pool (id, name, category, is_disabled)
-        VALUES (#{id}, #{name}, #{category}, #{isDisabled})
+    <insert id="insert" parameterType="com.xuena.supplier.domain.entity.SupplierPoolDO">
+        INSERT INTO sp_supplier_pool (id, name, category, is_disabled, create_name, create_id)
+        VALUES (#{id}, #{name}, #{category}, #{isDisabled}, #{createName}, #{createId})
     </insert>
     
-    <update id="update" parameterType="com.xuena.supplier.entity.SupplierPoolDO">
+    <update id="update" parameterType="com.xuena.supplier.domain.entity.SupplierPoolDO">
         UPDATE sp_supplier_pool
         <set>
             <if test="name != null">name = #{name},</if>
             <if test="category != null">category = #{category},</if>
             <if test="isDisabled != null">is_disabled = #{isDisabled},</if>
+            <if test="updateName != null">update_name = #{updateName},</if>
+            <if test="updateId != null">update_id = #{updateId},</if>
         </set>
         WHERE id = #{id}
     </update>
@@ -46,5 +48,16 @@
     
     <update id="updateStatus" parameterType="map">
         UPDATE sp_supplier_pool SET is_disabled = #{isDisabled} WHERE id = #{id}
+    </update>
+    
+    <select id="selectDistinctCategory" resultType="string">
+        SELECT DISTINCT category FROM sp_supplier_pool WHERE category IS NOT NULL AND category != '' AND is_deleted = 0 ORDER BY category
+    </select>
+    
+    <update id="batchDelete" parameterType="list">
+        UPDATE sp_supplier_pool SET is_deleted = 1 WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </update>
 </mapper>

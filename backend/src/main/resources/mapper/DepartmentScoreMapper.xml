@@ -1,26 +1,26 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xuena.supplier.infrastructure.mapper.DepartmentScoreMapper">
-    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.DepartmentScoreDO">
-        SELECT * FROM sp_department_score WHERE id = #{id} AND is_deleted = 0
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.domain.entity.DepartmentScoreDO">
+        SELECT id, `year_month`, supplier_name, department, dimension_group, dimension_score, sub_scores, exception_reason, status, file_name, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_department_score WHERE id = #{id} AND is_deleted = 0
     </select>
     
-    <select id="selectList" resultType="com.xuena.supplier.entity.DepartmentScoreDO">
-        SELECT * FROM sp_department_score WHERE is_deleted = 0
+    <select id="selectList" resultType="com.xuena.supplier.domain.entity.DepartmentScoreDO">
+        SELECT id, `year_month`, supplier_name, department, dimension_group, dimension_score, sub_scores, exception_reason, status, file_name, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_department_score WHERE is_deleted = 0
         <if test="yearMonth != null and yearMonth != ''">AND `year_month` = #{yearMonth}</if>
         <if test="supplierName != null and supplierName != ''">AND supplier_name LIKE CONCAT('%', #{supplierName}, '%')</if>
         <if test="department != null and department != ''">AND department = #{department}</if>
-        ORDER BY `year_month` DESC, gmt_create DESC
+        ORDER BY `year_month` DESC, create_date DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.DepartmentScoreDO">
+    <insert id="insert" parameterType="com.xuena.supplier.domain.entity.DepartmentScoreDO">
         INSERT INTO sp_department_score (id, `year_month`, supplier_name, department, dimension_group,
-            dimension_score, sub_scores, exception_reason, status, file_name)
+            dimension_score, sub_scores, exception_reason, status, file_name, create_name, create_id)
         VALUES (#{id}, #{yearMonth}, #{supplierName}, #{department}, #{dimensionGroup},
-            #{dimensionScore}, #{subScores}, #{exceptionReason}, #{status}, #{fileName})
+            #{dimensionScore}, #{subScores}, #{exceptionReason}, #{status}, #{fileName}, #{createName}, #{createId})
     </insert>
     
-    <update id="update" parameterType="com.xuena.supplier.entity.DepartmentScoreDO">
+    <update id="update" parameterType="com.xuena.supplier.domain.entity.DepartmentScoreDO">
         UPDATE sp_department_score
         <set>
             <if test="yearMonth != null">`year_month` = #{yearMonth},</if>
@@ -32,6 +32,8 @@
             <if test="exceptionReason != null">exception_reason = #{exceptionReason},</if>
             <if test="status != null">status = #{status},</if>
             <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="updateName != null">update_name = #{updateName},</if>
+            <if test="updateId != null">update_id = #{updateId},</if>
         </set>
         WHERE id = #{id}
     </update>

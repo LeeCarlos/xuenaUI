@@ -5,6 +5,7 @@ import com.xuena.supplier.domain.exception.BusinessException;
 import com.xuena.supplier.infrastructure.mapper.MonthlyAssessmentMapper;
 import com.xuena.supplier.application.service.MonthlyAssessmentService;
 import com.xuena.supplier.infrastructure.util.IdGenerator;
+import com.xuena.supplier.infrastructure.util.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,8 +120,12 @@ public class MonthlyAssessmentServiceImpl implements MonthlyAssessmentService {
         if (assessment.getId() == null) {
             assessment.setId(idGenerator.generateId());
             assessment.setStatus("DRAFT");
+            assessment.setCreateId(UserContext.getUserId());
+            assessment.setCreateName(UserContext.getUserName());
             monthlyAssessmentMapper.insert(assessment);
         } else {
+            assessment.setUpdateId(UserContext.getUserId());
+            assessment.setUpdateName(UserContext.getUserName());
             monthlyAssessmentMapper.update(assessment);
         }
     }

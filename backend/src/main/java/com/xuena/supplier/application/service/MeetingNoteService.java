@@ -8,7 +8,7 @@ public interface MeetingNoteService {
 
     MeetingNoteDO getById(String id);
 
-    List<MeetingNoteDO> list(String supplierName);
+    List<MeetingNoteDO> list(String supplierName, String monthFrom, String monthTo);
 
     MeetingNoteDO create(MeetingNoteDO note);
 

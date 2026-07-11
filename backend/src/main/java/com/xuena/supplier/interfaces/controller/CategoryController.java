@@ -2,7 +2,10 @@ package com.xuena.supplier.interfaces.controller;
 
 import com.xuena.supplier.domain.entity.CategoryDO;
 import com.xuena.supplier.application.service.CategoryService;
+import com.xuena.supplier.interfaces.vo.PageVO;
 import com.xuena.supplier.interfaces.vo.ResultVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,9 +34,13 @@ public class CategoryController {
 
     @GetMapping
     @Operation(summary = "查询分类列表", description = "查询所有分类信息")
-    public ResultVO<List<CategoryDO>> list() {
+    public ResultVO<PageVO<CategoryDO>> list(
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Integer pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
         List<CategoryDO> list = categoryService.list();
-        return ResultVO.success(list);
+        PageInfo<CategoryDO> pageInfo = new PageInfo<>(list);
+        return ResultVO.success(PageVO.of(list, pageInfo.getTotal(), pageNum, pageSize));
     }
 
     @GetMapping("/{id}")

@@ -5,6 +5,7 @@ import com.xuena.supplier.domain.exception.BusinessException;
 import com.xuena.supplier.infrastructure.mapper.SupplierPoolMapper;
 import com.xuena.supplier.application.service.SupplierPoolService;
 import com.xuena.supplier.infrastructure.util.IdGenerator;
+import com.xuena.supplier.infrastructure.util.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +49,8 @@ public class SupplierPoolServiceImpl implements SupplierPoolService {
         }
         supplier.setId(idGenerator.generateId());
         supplier.setIsDisabled(0);
+        supplier.setCreateId(UserContext.getUserId());
+        supplier.setCreateName(UserContext.getUserName());
         supplierPoolMapper.insert(supplier);
         return supplier;
     }
@@ -60,6 +63,8 @@ public class SupplierPoolServiceImpl implements SupplierPoolService {
             throw new BusinessException("供应商名称已存在");
         }
         supplier.setId(id);
+        supplier.setUpdateId(UserContext.getUserId());
+        supplier.setUpdateName(UserContext.getUserName());
         supplierPoolMapper.update(supplier);
         return supplier;
     }
@@ -83,5 +88,19 @@ public class SupplierPoolServiceImpl implements SupplierPoolService {
     public void disable(String id) {
         getById(id);
         supplierPoolMapper.updateStatus(id, 1);
+    }
+
+    @Override
+    @Transactional
+    public void batchDelete(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        supplierPoolMapper.batchDelete(ids);
+    }
+
+    @Override
+    public List<String> listDistinctCategories() {
+        return supplierPoolMapper.selectDistinctCategory();
     }
 }

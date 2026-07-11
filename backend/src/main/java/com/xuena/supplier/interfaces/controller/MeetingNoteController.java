@@ -2,10 +2,15 @@ package com.xuena.supplier.interfaces.controller;
 
 import com.xuena.supplier.domain.entity.MeetingNoteDO;
 import com.xuena.supplier.application.service.MeetingNoteService;
+import com.xuena.supplier.infrastructure.util.EasyExcelUtil;
+import com.xuena.supplier.interfaces.vo.PageVO;
 import com.xuena.supplier.interfaces.vo.ResultVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -31,10 +37,16 @@ public class MeetingNoteController {
 
     @GetMapping
     @Operation(summary = "查询会议纪要列表", description = "根据条件查询会议纪要列表")
-    public ResultVO<List<MeetingNoteDO>> list(
-            @Parameter(description = "供应商名称") @RequestParam(required = false) String supplierName) {
-        List<MeetingNoteDO> list = meetingNoteService.list(supplierName);
-        return ResultVO.success(list);
+    public ResultVO<PageVO<MeetingNoteDO>> list(
+            @Parameter(description = "供应商名称") @RequestParam(required = false) String supplierName,
+            @Parameter(description = "开始月份") @RequestParam(required = false) String monthFrom,
+            @Parameter(description = "结束月份") @RequestParam(required = false) String monthTo,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Integer pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+        List<MeetingNoteDO> list = meetingNoteService.list(supplierName, monthFrom, monthTo);
+        PageInfo<MeetingNoteDO> pageInfo = new PageInfo<>(list);
+        return ResultVO.success(PageVO.of(list, pageInfo.getTotal(), pageNum, pageSize));
     }
 
     @GetMapping("/{id}")
@@ -68,5 +80,16 @@ public class MeetingNoteController {
             @Parameter(description = "纪要ID") @PathVariable String id) {
         meetingNoteService.delete(id);
         return ResultVO.success();
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "导出会议纪要", description = "按筛选条件导出会议纪要数据")
+    public void exportMeetingNote(
+            @Parameter(description = "供应商名称") @RequestParam(required = false) String supplierName,
+            @Parameter(description = "开始月份") @RequestParam(required = false) String monthFrom,
+            @Parameter(description = "结束月份") @RequestParam(required = false) String monthTo,
+            HttpServletResponse response) throws IOException {
+        List<MeetingNoteDO> list = meetingNoteService.list(supplierName, monthFrom, monthTo);
+        EasyExcelUtil.writeExcel(response, "meeting_note_export.xlsx", MeetingNoteDO.class, list);
     }
 }

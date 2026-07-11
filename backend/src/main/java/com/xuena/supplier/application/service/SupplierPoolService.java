@@ -21,4 +21,8 @@ public interface SupplierPoolService {
     void enable(String id);
 
     void disable(String id);
+
+    void batchDelete(List<String> ids);
+
+    List<String> listDistinctCategories();
 }

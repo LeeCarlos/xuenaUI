@@ -2,10 +2,15 @@ package com.xuena.supplier.interfaces.controller;
 
 import com.xuena.supplier.domain.entity.MonthlyAssessmentDO;
 import com.xuena.supplier.application.service.MonthlyAssessmentService;
+import com.xuena.supplier.infrastructure.util.EasyExcelUtil;
+import com.xuena.supplier.interfaces.vo.PageVO;
 import com.xuena.supplier.interfaces.vo.ResultVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -31,15 +37,19 @@ public class AssessmentController {
 
     @GetMapping
     @Operation(summary = "查询考核列表", description = "根据条件查询月度考核记录列表")
-    public ResultVO<List<MonthlyAssessmentDO>> list(
+    public ResultVO<PageVO<MonthlyAssessmentDO>> list(
             @Parameter(description = "年月") @RequestParam(required = false) String yearMonth,
             @Parameter(description = "供应商名称") @RequestParam(required = false) String supplierName,
             @Parameter(description = "分类") @RequestParam(required = false) String category,
             @Parameter(description = "等级") @RequestParam(required = false) String grade,
-            @Parameter(description = "状态") @RequestParam(required = false) String status) {
+            @Parameter(description = "状态") @RequestParam(required = false) String status,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Integer pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
         List<MonthlyAssessmentDO> list = monthlyAssessmentService.list(
                 yearMonth, supplierName, category, grade, status);
-        return ResultVO.success(list);
+        PageInfo<MonthlyAssessmentDO> pageInfo = new PageInfo<>(list);
+        return ResultVO.success(PageVO.of(list, pageInfo.getTotal(), pageNum, pageSize));
     }
 
     @GetMapping("/{id}")
@@ -89,5 +99,19 @@ public class AssessmentController {
             @Parameter(description = "考核ID") @PathVariable String id) {
         monthlyAssessmentService.lock(id);
         return ResultVO.success();
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "导出考核", description = "按筛选条件导出考核数据")
+    public void exportAssessment(
+            @Parameter(description = "年月") @RequestParam(required = false) String yearMonth,
+            @Parameter(description = "供应商名称") @RequestParam(required = false) String supplierName,
+            @Parameter(description = "分类") @RequestParam(required = false) String category,
+            @Parameter(description = "等级") @RequestParam(required = false) String grade,
+            @Parameter(description = "状态") @RequestParam(required = false) String status,
+            HttpServletResponse response) throws IOException {
+        List<MonthlyAssessmentDO> list = monthlyAssessmentService.list(
+                yearMonth, supplierName, category, grade, status);
+        EasyExcelUtil.writeExcel(response, "assessment_export.xlsx", MonthlyAssessmentDO.class, list);
     }
 }

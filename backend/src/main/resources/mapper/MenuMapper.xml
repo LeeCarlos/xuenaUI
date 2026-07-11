@@ -1,31 +1,26 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xuena.supplier.infrastructure.mapper.MenuMapper">
-    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.entity.MenuDO">
-        SELECT * FROM sp_menu WHERE id = #{id} AND is_deleted = 0
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.domain.entity.MenuDO">
+        SELECT id, name, path, component, icon, parent_id, sort_order, type, permission_code, is_visible, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_menu WHERE id = #{id} AND is_deleted = 0
     </select>
     
-    <select id="selectList" resultType="com.xuena.supplier.entity.MenuDO">
-        SELECT * FROM sp_menu WHERE is_deleted = 0 ORDER BY parent_id ASC, sort_order ASC
+    <select id="selectByPath" parameterType="string" resultType="com.xuena.supplier.domain.entity.MenuDO">
+        SELECT id, name, path, component, icon, parent_id, sort_order, type, permission_code, is_visible, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_menu WHERE path = #{path} AND is_deleted = 0
     </select>
     
-    <select id="selectByRoleIds" parameterType="list" resultType="com.xuena.supplier.entity.MenuDO">
-        SELECT DISTINCT m.* FROM sp_menu m
-        JOIN sp_role_menu rm ON m.id = rm.menu_id
-        WHERE rm.role_id IN
-        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
-            #{roleId}
-        </foreach>
-        AND m.is_deleted = 0 AND m.is_visible = 1
-        ORDER BY m.parent_id ASC, m.sort_order ASC
+    <select id="selectList" resultType="com.xuena.supplier.domain.entity.MenuDO">
+        SELECT id, name, path, component, icon, parent_id, sort_order, type, permission_code, is_visible, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_menu WHERE is_deleted = 0
+        <if test="type != null and type != ''">AND type = #{type}</if>
+        ORDER BY parent_id, sort_order, create_date DESC
     </select>
     
-    <insert id="insert" parameterType="com.xuena.supplier.entity.MenuDO">
-        INSERT INTO sp_menu (id, name, path, component, icon, parent_id, sort_order, type, permission_code, is_visible)
-        VALUES (#{id}, #{name}, #{path}, #{component}, #{icon}, #{parentId}, #{sortOrder}, #{type}, #{permissionCode}, #{isVisible})
+    <insert id="insert" parameterType="com.xuena.supplier.domain.entity.MenuDO">
+        INSERT INTO sp_menu (id, name, path, component, icon, parent_id, sort_order, type, permission_code, is_visible, create_name, create_id)
+        VALUES (#{id}, #{name}, #{path}, #{component}, #{icon}, #{parentId}, #{sortOrder}, #{type}, #{permissionCode}, #{isVisible}, #{createName}, #{createId})
     </insert>
     
-    <update id="update" parameterType="com.xuena.supplier.entity.MenuDO">
+    <update id="update" parameterType="com.xuena.supplier.domain.entity.MenuDO">
         UPDATE sp_menu
         <set>
             <if test="name != null">name = #{name},</if>
@@ -37,6 +32,8 @@
             <if test="type != null">type = #{type},</if>
             <if test="permissionCode != null">permission_code = #{permissionCode},</if>
             <if test="isVisible != null">is_visible = #{isVisible},</if>
+            <if test="updateName != null">update_name = #{updateName},</if>
+            <if test="updateId != null">update_id = #{updateId},</if>
         </set>
         WHERE id = #{id}
     </update>
@@ -49,7 +46,19 @@
         SELECT COUNT(*) FROM sp_menu WHERE path = #{path} AND is_deleted = 0
     </select>
     
-    <select id="countByParentId" parameterType="string" resultType="int">
-        SELECT COUNT(*) FROM sp_menu WHERE parent_id = #{parentId} AND is_deleted = 0
+    <select id="countByPathAndNotId" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM sp_menu WHERE path = #{path} AND id != #{id} AND is_deleted = 0
+    </select>
+    
+    <select id="selectByRoleIds" parameterType="list" resultType="com.xuena.supplier.domain.entity.MenuDO">
+        SELECT m.id, m.name, m.path, m.component, m.icon, m.parent_id, m.sort_order, m.type, m.permission_code, m.is_visible, m.is_deleted, m.create_name, m.create_id, m.create_date, m.update_name, m.update_id, m.update_date 
+        FROM sp_menu m
+        LEFT JOIN sp_role_menu rm ON m.id = rm.menu_id
+        WHERE rm.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        AND m.is_deleted = 0
+        ORDER BY m.parent_id, m.sort_order
     </select>
 </mapper>

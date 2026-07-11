@@ -28,4 +28,8 @@ public interface SupplierPoolMapper {
     int countByNameAndNotId(@Param("name") String name, @Param("id") String id);
 
     int updateStatus(@Param("id") String id, @Param("isDisabled") Integer isDisabled);
+
+    int batchDelete(@Param("ids") List<String> ids);
+
+    List<String> selectDistinctCategory();
 }

@@ -1,20 +1,28 @@
-import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useState, useEffect, useRef } from 'react'
+import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm, Pagination } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons'
 import meetingNoteService from '../services/meetingNote'
 import poolService from '../services/pool'
 
 export default function MeetingNote() {
   const [data, setData] = useState([])
+  const [total, setTotal] = useState(0)
+  const [pageNum, setPageNum] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [suppliers, setSuppliers] = useState([])
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [filters, setFilters] = useState({ supplierName: '' })
+  const formRef = useRef(null)
 
   const fetchData = async () => {
     try {
-      const res = await meetingNoteService.list(filters)
-      setData(res.data || [])
+      const formValues = formRef.current?.getFieldsValue() || {}
+      const filters = {
+        supplierName: formValues.supplierName || ''
+      }
+      const res = await meetingNoteService.list({ ...filters, pageNum, pageSize })
+      setData(res.data?.list || [])
+      setTotal(res.data?.total || 0)
     } catch {
       message.error('获取会议纪要失败')
     }
@@ -22,8 +30,8 @@ export default function MeetingNote() {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await poolService.list()
-      setSuppliers(res.data || [])
+      const res = await poolService.list({ pageNum: 1, pageSize: 9999 })
+      setSuppliers(res.data?.list || [])
     } catch {
       message.error('获取供应商列表失败')
     }
@@ -32,7 +40,7 @@ export default function MeetingNote() {
   useEffect(() => {
     fetchData()
     fetchSuppliers()
-  }, [filters])
+  }, [pageNum, pageSize])
 
   const handleAdd = () => {
     setEditingId(null)
@@ -70,6 +78,18 @@ export default function MeetingNote() {
     }
   }
 
+  const handleExport = async () => {
+    try {
+      const formValues = formRef.current?.getFieldsValue() || {}
+      const filters = {
+        supplierName: formValues.supplierName || ''
+      }
+      await meetingNoteService.export(filters)
+    } catch {
+      message.error('导出失败')
+    }
+  }
+
   const columns = [
     { title: '供应商名称', dataIndex: 'supplierName', key: 'supplierName' },
     { title: '月份范围-起始', dataIndex: 'monthFrom', key: 'monthFrom' },
@@ -93,10 +113,13 @@ export default function MeetingNote() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h2>会议纪要管理</h2>
-        <Button icon={<PlusOutlined />} onClick={handleAdd}>新增纪要</Button>
+        <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>导出Excel</Button>
+          <Button icon={<PlusOutlined />} onClick={handleAdd}>新增纪要</Button>
+        </Space>
       </div>
       
-      <Form layout="inline" onValuesChange={(changedValues, allValues) => setFilters(allValues)} initialValues={filters}>
+      <Form ref={formRef} layout="inline">
         <Form.Item name="supplierName">
           <Select placeholder="供应商" allowClear>
             {suppliers.map((s) => (
@@ -109,11 +132,27 @@ export default function MeetingNote() {
         </Form.Item>
       </Form>
 
-      <Table columns={columns} dataSource={data} rowKey="id" />
+      <Table columns={columns} dataSource={data} rowKey="id" pagination={false} />
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <Pagination
+          current={pageNum}
+          pageSize={pageSize}
+          total={total}
+          showTotal={(total) => `共 ${total} 条记录`}
+          onChange={(page, size) => {
+            setPageNum(page)
+            setPageSize(size)
+          }}
+          showSizeChanger
+          pageSizeOptions={['10', '20', '30', '40', '50']}
+          showSizeChangerTooltipRender={() => ''}
+        />
+      </div>
 
       <Modal
         title={editingId ? '编辑会议纪要' : '新增会议纪要'}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
       >

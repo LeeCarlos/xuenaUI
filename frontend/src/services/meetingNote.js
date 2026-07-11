@@ -16,4 +16,16 @@ export default {
   delete(id) {
     return request.delete(`/meeting-note/${id}`)
   },
+  export(params) {
+    return request.get('/meeting-note/export', { params, responseType: 'blob' }).then(res => {
+      const url = window.URL.createObjectURL(new Blob([res]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `会议纪要列表_${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    })
+  },
 }

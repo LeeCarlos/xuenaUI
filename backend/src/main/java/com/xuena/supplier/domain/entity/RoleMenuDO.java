@@ -10,5 +10,10 @@ public class RoleMenuDO {
     private String id;
     private String roleId;
     private String menuId;
-    private Date gmtCreate;
+    private String createName;
+    private String createId;
+    private Date createDate;
+    private String updateName;
+    private String updateId;
+    private Date updateDate;
 }

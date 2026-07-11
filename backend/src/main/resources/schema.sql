@@ -1,27 +1,35 @@
 CREATE TABLE IF NOT EXISTS sp_supplier_pool (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     name VARCHAR(255) NOT NULL COMMENT '供应商名称',
     category VARCHAR(100) NULL COMMENT '供应商类别',
     is_disabled TINYINT UNSIGNED DEFAULT 0 COMMENT '是否禁用（0-启用，1-禁用）',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_category (category),
     UNIQUE INDEX uk_supplier_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='供应商池表';
 
 CREATE TABLE IF NOT EXISTS sp_category (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     name VARCHAR(100) NOT NULL COMMENT '类别名称',
     description VARCHAR(500) NULL COMMENT '类别描述',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE INDEX uk_category_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='类别管理表';
 
 CREATE TABLE IF NOT EXISTS sp_monthly_assessment (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     `year_month` VARCHAR(7) NOT NULL COMMENT '年月（格式：YYYY-MM）',
     supplier_name VARCHAR(255) NOT NULL COMMENT '供应商名称',
     category VARCHAR(100) NULL COMMENT '供应商类别',
@@ -60,8 +68,12 @@ CREATE TABLE IF NOT EXISTS sp_monthly_assessment (
     status VARCHAR(20) DEFAULT 'DRAFT' COMMENT '状态（DRAFT-草稿，LOCKED-已提交）',
     file_name VARCHAR(255) NULL COMMENT '原始文件名',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_year_month (`year_month`),
     INDEX idx_category (category),
     INDEX idx_grade (grade),
@@ -69,7 +81,7 @@ CREATE TABLE IF NOT EXISTS sp_monthly_assessment (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='月度考核记录表';
 
 CREATE TABLE IF NOT EXISTS sp_department_score (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     `year_month` VARCHAR(7) NOT NULL COMMENT '年月（格式：YYYY-MM）',
     supplier_name VARCHAR(255) NOT NULL COMMENT '供应商名称',
     department VARCHAR(50) NOT NULL COMMENT '提交部门（计划/采购/质量/包开）',
@@ -80,27 +92,35 @@ CREATE TABLE IF NOT EXISTS sp_department_score (
     status VARCHAR(20) DEFAULT 'DRAFT' COMMENT '状态（DRAFT-草稿，SUBMITTED-已提交）',
     file_name VARCHAR(255) NULL COMMENT '原始文件名',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_year_month_dept (`year_month`, department),
     INDEX idx_dimension_group (dimension_group),
     UNIQUE INDEX uk_year_month_supplier_dept (`year_month`, supplier_name, department)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门打分明细表';
 
 CREATE TABLE IF NOT EXISTS sp_meeting_note (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     supplier_name VARCHAR(255) NOT NULL COMMENT '供应商名称',
     month_from VARCHAR(7) NOT NULL COMMENT '起始年月（格式：YYYY-MM）',
     month_to VARCHAR(7) NOT NULL COMMENT '结束年月（格式：YYYY-MM）',
     note TEXT NULL COMMENT '会议记录内容',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_supplier_month_range (supplier_name, month_from, month_to)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会议记录表';
 
 CREATE TABLE IF NOT EXISTS sp_user (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     username VARCHAR(100) NOT NULL COMMENT '用户名',
     password VARCHAR(255) NOT NULL COMMENT '密码（加密存储）',
     department VARCHAR(50) NULL COMMENT '所属部门（计划/采购/质量/包开）',
@@ -108,87 +128,158 @@ CREATE TABLE IF NOT EXISTS sp_user (
     email VARCHAR(255) NULL COMMENT '邮箱',
     is_enabled TINYINT UNSIGNED DEFAULT 1 COMMENT '是否启用（0-禁用，1-启用）',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_department (department),
     UNIQUE INDEX uk_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS sp_role (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     name VARCHAR(100) NOT NULL COMMENT '角色名称',
     code VARCHAR(50) NOT NULL COMMENT '角色编码',
     description VARCHAR(500) NULL COMMENT '角色描述',
     is_system TINYINT UNSIGNED DEFAULT 0 COMMENT '是否系统角色（0-自定义，1-系统内置）',
     is_enabled TINYINT UNSIGNED DEFAULT 1 COMMENT '是否启用（0-禁用，1-启用）',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_role_name (name),
     UNIQUE INDEX uk_role_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
 CREATE TABLE IF NOT EXISTS sp_permission (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     name VARCHAR(100) NOT NULL COMMENT '权限名称',
     code VARCHAR(100) NOT NULL COMMENT '权限编码',
     module VARCHAR(50) NOT NULL COMMENT '所属模块',
     type VARCHAR(20) DEFAULT 'FUNCTION' COMMENT '权限类型（MENU-菜单权限，FUNCTION-功能权限，DATA-数据权限）',
     description VARCHAR(500) NULL COMMENT '权限描述',
-    parent_id BIGINT UNSIGNED DEFAULT 0 COMMENT '父权限ID（0表示顶级）',
+    parent_id VARCHAR(64) DEFAULT '0' COMMENT '父权限ID（0表示顶级）',
     sort_order INT DEFAULT 0 COMMENT '排序号',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_module (module),
     INDEX idx_parent_id (parent_id),
     UNIQUE INDEX uk_permission_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限表';
 
 CREATE TABLE IF NOT EXISTS sp_menu (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
     name VARCHAR(100) NOT NULL COMMENT '菜单名称',
     path VARCHAR(255) NULL COMMENT '路由路径',
     component VARCHAR(255) NULL COMMENT '组件路径',
     icon VARCHAR(100) NULL COMMENT '菜单图标',
-    parent_id BIGINT UNSIGNED DEFAULT 0 COMMENT '父菜单ID（0表示顶级菜单）',
+    parent_id VARCHAR(64) DEFAULT '0' COMMENT '父菜单ID（0表示顶级菜单）',
     sort_order INT DEFAULT 0 COMMENT '排序号',
     type VARCHAR(20) DEFAULT 'MENU' COMMENT '菜单类型（MENU-菜单，DIRECTORY-目录，BUTTON-按钮）',
     permission_code VARCHAR(100) NULL COMMENT '关联权限编码',
     is_visible TINYINT UNSIGNED DEFAULT 1 COMMENT '是否显示（0-隐藏，1-显示）',
     is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    gmt_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_parent_id (parent_id),
     UNIQUE INDEX uk_menu_path (path)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单表';
 
 CREATE TABLE IF NOT EXISTS sp_user_role (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
-    user_id BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-    role_id BIGINT UNSIGNED NOT NULL COMMENT '角色ID',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
+    user_id VARCHAR(64) NOT NULL COMMENT '用户ID',
+    role_id VARCHAR(64) NOT NULL COMMENT '角色ID',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_user_id (user_id),
     INDEX idx_role_id (role_id),
     UNIQUE INDEX uk_user_role (user_id, role_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';
 
 CREATE TABLE IF NOT EXISTS sp_role_permission (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
-    role_id BIGINT UNSIGNED NOT NULL COMMENT '角色ID',
-    permission_id BIGINT UNSIGNED NOT NULL COMMENT '权限ID',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
+    role_id VARCHAR(64) NOT NULL COMMENT '角色ID',
+    permission_id VARCHAR(64) NOT NULL COMMENT '权限ID',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_role_id (role_id),
     INDEX idx_permission_id (permission_id),
     UNIQUE INDEX uk_role_permission (role_id, permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
 
 CREATE TABLE IF NOT EXISTS sp_role_menu (
-    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
-    role_id BIGINT UNSIGNED NOT NULL COMMENT '角色ID',
-    menu_id BIGINT UNSIGNED NOT NULL COMMENT '菜单ID',
-    gmt_create DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
+    role_id VARCHAR(64) NOT NULL COMMENT '角色ID',
+    menu_id VARCHAR(64) NOT NULL COMMENT '菜单ID',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_role_id (role_id),
     INDEX idx_menu_id (menu_id),
     UNIQUE INDEX uk_role_menu (role_id, menu_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色菜单关联表';
+
+CREATE TABLE IF NOT EXISTS sp_file (
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
+    file_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
+    store_key VARCHAR(255) NOT NULL COMMENT '存储键（唯一标识）',
+    file_type VARCHAR(20) NOT NULL COMMENT '文件类型（NORMAL-普通文件，TEMPLATE-模板文件）',
+    file_path VARCHAR(500) NOT NULL COMMENT '存储路径',
+    file_size BIGINT NULL COMMENT '文件大小（字节）',
+    content_type VARCHAR(100) NULL COMMENT '文件MIME类型',
+    description VARCHAR(500) NULL COMMENT '文件描述',
+    is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_file_type (file_type),
+    INDEX idx_store_key (store_key),
+    UNIQUE INDEX uk_store_key (store_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件管理表';
+
+CREATE TABLE IF NOT EXISTS sp_dict (
+    id VARCHAR(64) PRIMARY KEY COMMENT '主键',
+    `item` VARCHAR(50) NOT NULL COMMENT '字典项（如：category、status、grade、department）',
+    `key` VARCHAR(50) NOT NULL COMMENT '字典键',
+    `value` VARCHAR(100) NOT NULL COMMENT '字典值',
+    description VARCHAR(200) NULL COMMENT '描述',
+    sort_order INT DEFAULT 0 COMMENT '排序号',
+    is_enabled TINYINT UNSIGNED DEFAULT 1 COMMENT '是否启用（0-禁用，1-启用）',
+    is_deleted TINYINT UNSIGNED DEFAULT 0 COMMENT '是否删除（0-未删除，1-已删除）',
+    create_name VARCHAR(100) NULL COMMENT '创建人',
+    create_id VARCHAR(64) NULL COMMENT '创建人ID',
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+    update_name VARCHAR(100) NULL COMMENT '更新人',
+    update_id VARCHAR(64) NULL COMMENT '更新人ID',
+    update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_item (`item`),
+    UNIQUE INDEX uk_item_key (`item`, `key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典表';

@@ -11,7 +11,7 @@ public interface MeetingNoteMapper {
 
     MeetingNoteDO selectById(@Param("id") String id);
 
-    List<MeetingNoteDO> selectList(@Param("supplierName") String supplierName);
+    List<MeetingNoteDO> selectList(@Param("supplierName") String supplierName, @Param("monthFrom") String monthFrom, @Param("monthTo") String monthTo);
 
     int insert(MeetingNoteDO note);
 

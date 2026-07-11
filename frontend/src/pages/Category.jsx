@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Space, message, Popconfirm } from 'antd'
+import { Table, Button, Modal, Form, Input, Space, message, Popconfirm, Pagination } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import categoryService from '../services/category'
 
 export default function Category() {
   const [data, setData] = useState([])
+  const [total, setTotal] = useState(0)
+  const [pageNum, setPageNum] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
   const fetchData = async () => {
     try {
-      const res = await categoryService.list()
-      setData(res.data || [])
+      const res = await categoryService.list({ pageNum, pageSize })
+      setData(res.data?.list || [])
+      setTotal(res.data?.total || 0)
     } catch {
       message.error('获取品类列表失败')
     }
@@ -19,7 +23,7 @@ export default function Category() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [pageNum, pageSize])
 
   const handleAdd = () => {
     setEditingId(null)
@@ -81,11 +85,27 @@ export default function Category() {
         <Button icon={<PlusOutlined />} onClick={handleAdd}>新增品类</Button>
       </div>
 
-      <Table columns={columns} dataSource={data} rowKey="id" />
+      <Table columns={columns} dataSource={data} rowKey="id" pagination={false} />
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <Pagination
+          current={pageNum}
+          pageSize={pageSize}
+          total={total}
+          showTotal={(total) => `共 ${total} 条记录`}
+          onChange={(page, size) => {
+            setPageNum(page)
+            setPageSize(size)
+          }}
+          showSizeChanger
+          pageSizeOptions={['10', '20', '30', '40', '50']}
+          showSizeChangerTooltipRender={() => ''}
+        />
+      </div>
 
       <Modal
         title={editingId ? '编辑品类' : '新增品类'}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
       >

@@ -5,6 +5,7 @@ import com.xuena.supplier.domain.exception.BusinessException;
 import com.xuena.supplier.infrastructure.mapper.DepartmentScoreMapper;
 import com.xuena.supplier.application.service.DepartmentScoreService;
 import com.xuena.supplier.infrastructure.util.IdGenerator;
+import com.xuena.supplier.infrastructure.util.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,8 @@ public class DepartmentScoreServiceImpl implements DepartmentScoreService {
     public DepartmentScoreDO create(DepartmentScoreDO score) {
         score.setId(idGenerator.generateId());
         score.setStatus("PENDING");
+        score.setCreateId(UserContext.getUserId());
+        score.setCreateName(UserContext.getUserName());
         departmentScoreMapper.insert(score);
         return score;
     }
@@ -52,6 +55,8 @@ public class DepartmentScoreServiceImpl implements DepartmentScoreService {
             throw new BusinessException("已完成的打分记录不能修改");
         }
         score.setId(id);
+        score.setUpdateId(UserContext.getUserId());
+        score.setUpdateName(UserContext.getUserName());
         departmentScoreMapper.update(score);
         return score;
     }

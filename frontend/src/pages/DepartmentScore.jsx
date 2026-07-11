@@ -1,20 +1,34 @@
-import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, Space, message, Popconfirm } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons'
+import { useState, useEffect, useRef } from 'react'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, Space, message, Popconfirm, Pagination, DatePicker } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, DownloadOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
+import zhCN from 'antd/locale/zh_CN'
 import departmentScoreService from '../services/departmentScore'
 import poolService from '../services/pool'
+import dictService from '../services/dict'
 
 export default function DepartmentScore() {
   const [data, setData] = useState([])
+  const [total, setTotal] = useState(0)
+  const [pageNum, setPageNum] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [suppliers, setSuppliers] = useState([])
+  const [departmentOptions, setDepartmentOptions] = useState([])
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [filters, setFilters] = useState({ yearMonth: '', supplierName: '', department: '' })
+  const formRef = useRef(null)
 
   const fetchData = async () => {
     try {
-      const res = await departmentScoreService.list(filters)
-      setData(res.data || [])
+      const formValues = formRef.current?.getFieldsValue() || {}
+      const filters = {
+        yearMonth: formValues.yearMonth ? formValues.yearMonth.format('YYYY-MM') : '',
+        supplierName: formValues.supplierName || '',
+        department: formValues.department || ''
+      }
+      const res = await departmentScoreService.list({ ...filters, pageNum, pageSize })
+      setData(res.data?.list || [])
+      setTotal(res.data?.total || 0)
     } catch {
       message.error('获取部门打分记录失败')
     }
@@ -22,17 +36,32 @@ export default function DepartmentScore() {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await poolService.list()
-      setSuppliers(res.data || [])
+      const res = await poolService.list({ pageNum: 1, pageSize: 9999 })
+      setSuppliers(res.data?.list || [])
     } catch {
       message.error('获取供应商列表失败')
+    }
+  }
+
+  const fetchDicts = async () => {
+    try {
+      const deptRes = await dictService.list('department')
+      setDepartmentOptions(deptRes.data || [])
+    } catch {
+      message.error('获取字典数据失败')
     }
   }
 
   useEffect(() => {
     fetchData()
     fetchSuppliers()
-  }, [filters])
+    fetchDicts()
+  }, [pageNum, pageSize])
+
+  useEffect(() => {
+    const lastMonth = dayjs().subtract(1, 'month')
+    formRef.current?.setFieldsValue({ yearMonth: lastMonth })
+  }, [])
 
   const handleAdd = () => {
     setEditingId(null)
@@ -76,17 +105,35 @@ export default function DepartmentScore() {
 
   const handleFormSubmit = async (values) => {
     try {
+      const submitValues = {
+        ...values,
+        yearMonth: values.yearMonth ? values.yearMonth.format('YYYY-MM') : ''
+      }
       if (editingId) {
-        await departmentScoreService.update(editingId, values)
+        await departmentScoreService.update(editingId, submitValues)
         message.success('更新成功')
       } else {
-        await departmentScoreService.create(values)
+        await departmentScoreService.create(submitValues)
         message.success('创建成功')
       }
       setModalVisible(false)
       fetchData()
     } catch (error) {
       message.error(error.message || '操作失败')
+    }
+  }
+
+  const handleExport = async () => {
+    try {
+      const formValues = formRef.current?.getFieldsValue() || {}
+      const filters = {
+        yearMonth: formValues.yearMonth ? formValues.yearMonth.format('YYYY-MM') : '',
+        supplierName: formValues.supplierName || '',
+        department: formValues.department || ''
+      }
+      await departmentScoreService.export(filters)
+    } catch {
+      message.error('导出失败')
     }
   }
 
@@ -133,12 +180,15 @@ export default function DepartmentScore() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h2>部门打分明细</h2>
-        <Button icon={<PlusOutlined />} onClick={handleAdd}>新增打分</Button>
+        <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>导出Excel</Button>
+          <Button icon={<PlusOutlined />} onClick={handleAdd}>新增打分</Button>
+        </Space>
       </div>
       
-      <Form layout="inline" onValuesChange={(changedValues, allValues) => setFilters(allValues)} initialValues={filters}>
+      <Form ref={formRef} layout="inline">
         <Form.Item name="yearMonth">
-          <Input placeholder="年月 (如2024-01)" />
+          <DatePicker picker="month" format="YYYY-MM" placeholder="请选择年月" style={{ width: 180 }} locale={zhCN} />
         </Form.Item>
         <Form.Item name="supplierName">
           <Select placeholder="供应商" allowClear>
@@ -147,12 +197,11 @@ export default function DepartmentScore() {
             ))}
           </Select>
         </Form.Item>
-        <Form.Item name="department">
-          <Select placeholder="部门" allowClear>
-            <Select.Option value="质量">质量部</Select.Option>
-            <Select.Option value="计划">计划部</Select.Option>
-            <Select.Option value="包开">包开部</Select.Option>
-            <Select.Option value="采购">采购部</Select.Option>
+        <Form.Item name="department" label="部门">
+          <Select placeholder="请选择部门" allowClear>
+            {departmentOptions.map((d) => (
+              <Select.Option key={d.key} value={d.key}>{d.value}</Select.Option>
+            ))}
           </Select>
         </Form.Item>
         <Form.Item>
@@ -160,38 +209,59 @@ export default function DepartmentScore() {
         </Form.Item>
       </Form>
 
-      <Table columns={columns} dataSource={data} rowKey="id" />
+      <Table columns={columns} dataSource={data} rowKey="id" pagination={false} />
+      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+        <Pagination
+          current={pageNum}
+          pageSize={pageSize}
+          total={total}
+          showTotal={(total) => `共 ${total} 条记录`}
+          onChange={(page, size) => {
+            setPageNum(page)
+            setPageSize(size)
+          }}
+          showSizeChanger
+          pageSizeOptions={['10', '20', '30', '40', '50']}
+          showSizeChangerTooltipRender={() => ''}
+        />
+      </div>
 
       <Modal
         title={editingId ? '编辑打分' : '新增打分'}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
-        <DepartmentScoreForm suppliers={suppliers} editingId={editingId} data={data} onSubmit={handleFormSubmit} onCancel={() => setModalVisible(false)} />
+        <DepartmentScoreForm suppliers={suppliers} departmentOptions={departmentOptions} editingId={editingId} data={data} onSubmit={handleFormSubmit} onCancel={() => setModalVisible(false)} />
       </Modal>
     </div>
   )
 }
 
-function DepartmentScoreForm({ suppliers, editingId, data, onSubmit, onCancel }) {
+function DepartmentScoreForm({ suppliers, departmentOptions, editingId, data, onSubmit, onCancel }) {
   const [form] = Form.useForm()
   
   useEffect(() => {
     if (editingId) {
       const record = data.find((item) => item.id === editingId)
       if (record) {
-        form.setFieldsValue(record)
+        const formattedRecord = {
+          ...record,
+          yearMonth: record.yearMonth ? dayjs(record.yearMonth, 'YYYY-MM') : null
+        }
+        form.setFieldsValue(formattedRecord)
       }
     } else {
-      form.resetFields()
+      const lastMonth = dayjs().subtract(1, 'month')
+      form.setFieldsValue({ yearMonth: lastMonth })
     }
   }, [editingId, data, form])
 
   return (
     <Form form={form} onFinish={onSubmit} layout="vertical">
-      <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请输入年月' }]}>
-        <Input placeholder="如2024-01" />
+      <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请选择年月' }]}>
+        <DatePicker picker="month" format="YYYY-MM" style={{ width: '100%' }} locale={zhCN} />
       </Form.Item>
       <Form.Item name="supplierName" label="供应商名称" rules={[{ required: true, message: '请选择供应商' }]}>
         <Select>
@@ -202,10 +272,9 @@ function DepartmentScoreForm({ suppliers, editingId, data, onSubmit, onCancel })
       </Form.Item>
       <Form.Item name="department" label="部门" rules={[{ required: true, message: '请选择部门' }]}>
         <Select>
-          <Select.Option value="质量">质量部</Select.Option>
-          <Select.Option value="计划">计划部</Select.Option>
-          <Select.Option value="包开">包开部</Select.Option>
-          <Select.Option value="采购">采购部</Select.Option>
+          {departmentOptions.map((d) => (
+            <Select.Option key={d.key} value={d.key}>{d.value}</Select.Option>
+          ))}
         </Select>
       </Form.Item>
       <Form.Item name="dimensionGroup" label="维度组">

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xuena.supplier.infrastructure.mapper.SummaryMapper">
 
@@ -21,12 +21,12 @@
     </select>
 
     <select id="calculateAvgScore" resultType="double">
-        SELECT COALESCE(AVG(total_score), 0) FROM sp_monthly_assessment 
+        SELECT COALESCE(AVG(total), 0) FROM sp_monthly_assessment 
         WHERE is_deleted = 0 AND status = 'LOCKED'
         <if test="yearMonth != null and yearMonth != ''">AND year_month = #{yearMonth}</if>
     </select>
 
-    <select id="selectDepartmentSummaries" resultType="com.xuena.supplier.vo.response.SummaryVO$DepartmentSummary">
+    <select id="selectDepartmentSummaries" resultType="com.xuena.supplier.interfaces.vo.response.SummaryVO$DepartmentSummary">
         SELECT department,
                COUNT(*) as score_count,
                COALESCE(AVG(dimension_score), 0) as avg_score
@@ -37,10 +37,10 @@
         ORDER BY department
     </select>
 
-    <select id="selectCategorySummaries" resultType="com.xuena.supplier.vo.response.SummaryVO$CategorySummary">
+    <select id="selectCategorySummaries" resultType="com.xuena.supplier.interfaces.vo.response.SummaryVO$CategorySummary">
         SELECT sp.category,
                COUNT(DISTINCT sp.id) as supplier_count,
-               COALESCE(AVG(ma.total_score), 0) as avg_score,
+               COALESCE(AVG(ma.total), 0) as avg_score,
                SUM(CASE WHEN ma.grade = 'A' THEN 1 ELSE 0 END) as grade_a_count,
                SUM(CASE WHEN ma.grade = 'D' THEN 1 ELSE 0 END) as grade_d_count
         FROM sp_supplier_pool sp

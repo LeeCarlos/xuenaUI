@@ -1,8 +1,8 @@
 import request from '../utils/request'
 
 export default {
-  list() {
-    return request.get('/category')
+  list(params) {
+    return request.get('/category', { params })
   },
   get(id) {
     return request.get(`/category/${id}`)

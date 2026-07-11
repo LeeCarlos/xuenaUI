@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xuena.supplier.infrastructure.mapper.DictMapper">
+    <select id="selectById" parameterType="string" resultType="com.xuena.supplier.domain.entity.DictDO">
+        SELECT id, item, `key`, value, description, sort_order, is_enabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_dict WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <select id="selectByItem" parameterType="string" resultType="com.xuena.supplier.domain.entity.DictDO">
+        SELECT id, item, `key`, value, description, sort_order, is_enabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date 
+        FROM sp_dict WHERE item = #{item} AND is_deleted = 0 
+        ORDER BY sort_order, create_date DESC
+    </select>
+    
+    <select id="selectByItemAndKey" parameterType="map" resultType="com.xuena.supplier.domain.entity.DictDO">
+        SELECT id, item, `key`, value, description, sort_order, is_enabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_dict WHERE item = #{item} AND `key` = #{key} AND is_deleted = 0
+    </select>
+    
+    <select id="selectList" resultType="com.xuena.supplier.domain.entity.DictDO">
+        SELECT id, item, `key`, value, description, sort_order, is_enabled, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_dict WHERE is_deleted = 0 ORDER BY item, sort_order, create_date DESC
+    </select>
+    
+    <insert id="insert" parameterType="com.xuena.supplier.domain.entity.DictDO">
+        INSERT INTO sp_dict (id, item, `key`, `value`, description, sort_order, is_enabled, create_name, create_id)
+        VALUES (#{id}, #{item}, #{key}, #{value}, #{description}, #{sortOrder}, #{isEnabled}, #{createName}, #{createId})
+    </insert>
+    
+    <update id="update" parameterType="com.xuena.supplier.domain.entity.DictDO">
+        UPDATE sp_dict
+        <set>
+            <if test="item != null">item = #{item},</if>
+            <if test="key != null">`key` = #{key},</if>
+            <if test="value != null">`value` = #{value},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="updateName != null">update_name = #{updateName},</if>
+            <if test="updateId != null">update_id = #{updateId},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <update id="delete" parameterType="string">
+        UPDATE sp_dict SET is_deleted = 1 WHERE id = #{id}
+    </update>
+    
+    <select id="countByItemAndKey" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM sp_dict WHERE item = #{item} AND `key` = #{key} AND is_deleted = 0
+    </select>
+    
+    <select id="countByItemAndKeyAndNotId" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM sp_dict WHERE item = #{item} AND `key` = #{key} AND id != #{id} AND is_deleted = 0
+    </select>
+</mapper>

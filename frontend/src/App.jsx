@@ -10,6 +10,8 @@ import DepartmentScore from './pages/DepartmentScore'
 import MeetingNote from './pages/MeetingNote'
 import Compare from './pages/Compare'
 import Summary from './pages/Summary'
+import FileManager from './pages/FileManager'
+import TemplateManager from './pages/TemplateManager'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token')
@@ -40,6 +42,8 @@ function App() {
         <Route path="/meeting-note" element={<PrivateRoute><Layout><MeetingNote /></Layout></PrivateRoute>} />
         <Route path="/compare" element={<PrivateRoute><Layout><Compare /></Layout></PrivateRoute>} />
         <Route path="/summary" element={<PrivateRoute><Layout><Summary /></Layout></PrivateRoute>} />
+        <Route path="/file-manager" element={<PrivateRoute><Layout><FileManager /></Layout></PrivateRoute>} />
+        <Route path="/template-manager" element={<PrivateRoute><Layout><TemplateManager /></Layout></PrivateRoute>} />
         <Route path="/*" element={<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>} />
       </Routes>
     </StoreProvider>

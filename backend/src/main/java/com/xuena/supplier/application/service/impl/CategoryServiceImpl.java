@@ -5,6 +5,7 @@ import com.xuena.supplier.domain.exception.BusinessException;
 import com.xuena.supplier.infrastructure.mapper.CategoryMapper;
 import com.xuena.supplier.application.service.CategoryService;
 import com.xuena.supplier.infrastructure.util.IdGenerator;
+import com.xuena.supplier.infrastructure.util.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,8 @@ public class CategoryServiceImpl implements CategoryService {
             throw new BusinessException("品类名称已存在");
         }
         category.setId(idGenerator.generateId());
+        category.setCreateId(UserContext.getUserId());
+        category.setCreateName(UserContext.getUserName());
         categoryMapper.insert(category);
         return category;
     }
@@ -59,6 +62,8 @@ public class CategoryServiceImpl implements CategoryService {
             throw new BusinessException("品类名称已存在");
         }
         category.setId(id);
+        category.setUpdateId(UserContext.getUserId());
+        category.setUpdateName(UserContext.getUserName());
         categoryMapper.update(category);
         return category;
     }

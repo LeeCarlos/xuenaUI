@@ -10,5 +10,10 @@ public class RolePermissionDO {
     private String id;
     private String roleId;
     private String permissionId;
-    private Date gmtCreate;
+    private String createName;
+    private String createId;
+    private Date createDate;
+    private String updateName;
+    private String updateId;
+    private Date updateDate;
 }

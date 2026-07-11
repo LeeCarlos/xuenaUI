@@ -13,6 +13,10 @@ public class MeetingNoteDO {
     private String monthTo;
     private String note;
     private Integer isDeleted;
-    private Date gmtCreate;
-    private Date gmtModified;
+    private String createName;
+    private String createId;
+    private Date createDate;
+    private String updateName;
+    private String updateId;
+    private Date updateDate;
 }

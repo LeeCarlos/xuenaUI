@@ -8,6 +8,7 @@ import com.xuena.supplier.infrastructure.mapper.RoleMenuMapper;
 import com.xuena.supplier.infrastructure.mapper.RolePermissionMapper;
 import com.xuena.supplier.application.service.RoleService;
 import com.xuena.supplier.infrastructure.util.IdGenerator;
+import com.xuena.supplier.infrastructure.util.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +58,8 @@ public class RoleServiceImpl implements RoleService {
             throw new BusinessException("角色编码已存在");
         }
         role.setId(idGenerator.generateId());
+        role.setCreateId(UserContext.getUserId());
+        role.setCreateName(UserContext.getUserName());
         roleMapper.insert(role);
         return role;
     }
@@ -69,6 +72,8 @@ public class RoleServiceImpl implements RoleService {
             throw new BusinessException("角色编码已存在");
         }
         role.setId(id);
+        role.setUpdateId(UserContext.getUserId());
+        role.setUpdateName(UserContext.getUserName());
         roleMapper.update(role);
         return role;
     }

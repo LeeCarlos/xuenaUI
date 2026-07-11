@@ -443,11 +443,20 @@ export default function Dashboard() {
           <Row gutter={[16, 16]} align="middle">
             <Col span={6}>
               <div style={{ fontWeight: 500, marginBottom: '8px' }}>类别筛选</div>
-              <CheckboxGroup
-                options={categories.map((c) => ({ label: c, value: c }))}
+              <Select
+                mode="multiple"
+                placeholder="选择类别（默认全部）"
                 value={selectedCategories}
                 onChange={handleCategoryChange}
-              />
+                style={{ width: '100%' }}
+                maxTagCount="responsive"
+              >
+                {categories.map((category) => (
+                  <Option key={category} value={category}>
+                    {category}
+                  </Option>
+                ))}
+              </Select>
             </Col>
             <Col span={6}>
               <div style={{ fontWeight: 500, marginBottom: '8px' }}>供应商筛选</div>
