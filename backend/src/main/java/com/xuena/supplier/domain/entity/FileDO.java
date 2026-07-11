@@ -11,6 +11,7 @@ public class FileDO {
     private String fileName;
     private String storeKey;
     private String fileType;
+    private String businessType;
     private String filePath;
     private Long fileSize;
     private String contentType;

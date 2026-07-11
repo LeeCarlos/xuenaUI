@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, Space, message, Popconfirm, Pagination, DatePicker } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, DownloadOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, Space, message, Popconfirm, Pagination, DatePicker, Upload } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import zhCN from 'antd/locale/zh_CN'
 import departmentScoreService from '../services/departmentScore'
@@ -16,7 +16,10 @@ export default function DepartmentScore() {
   const [departmentOptions, setDepartmentOptions] = useState([])
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [importModalVisible, setImportModalVisible] = useState(false)
+  const [selectedDeptForImport, setSelectedDeptForImport] = useState('')
   const formRef = useRef(null)
+  const importFormRef = useRef(null)
 
   const fetchData = async () => {
     try {
@@ -86,20 +89,31 @@ export default function DepartmentScore() {
   const handleSubmit = async (id) => {
     try {
       await departmentScoreService.submit(id)
-      message.success('已提交')
+      message.success('已提交，不可修改')
       fetchData()
     } catch {
       message.error('提交失败')
     }
   }
 
-  const handleComplete = async (id) => {
+  const handleSave = async (values) => {
     try {
-      await departmentScoreService.complete(id)
-      message.success('已完成')
+      const submitValues = {
+        ...values,
+        yearMonth: values.yearMonth ? values.yearMonth.format('YYYY-MM') : '',
+        status: 'IN_PROGRESS'
+      }
+      if (editingId) {
+        await departmentScoreService.update(editingId, submitValues)
+        message.success('保存成功')
+      } else {
+        await departmentScoreService.create(submitValues)
+        message.success('保存成功')
+      }
+      setModalVisible(false)
       fetchData()
-    } catch {
-      message.error('操作失败')
+    } catch (error) {
+      message.error(error.message || '操作失败')
     }
   }
 
@@ -107,14 +121,15 @@ export default function DepartmentScore() {
     try {
       const submitValues = {
         ...values,
-        yearMonth: values.yearMonth ? values.yearMonth.format('YYYY-MM') : ''
+        yearMonth: values.yearMonth ? values.yearMonth.format('YYYY-MM') : '',
+        status: 'COMPLETED'
       }
       if (editingId) {
         await departmentScoreService.update(editingId, submitValues)
-        message.success('更新成功')
+        message.success('提交成功，不可修改')
       } else {
         await departmentScoreService.create(submitValues)
-        message.success('创建成功')
+        message.success('提交成功，不可修改')
       }
       setModalVisible(false)
       fetchData()
@@ -137,6 +152,40 @@ export default function DepartmentScore() {
     }
   }
 
+  const handleExportTemplate = async () => {
+    try {
+      const formValues = formRef.current?.getFieldsValue() || {}
+      const department = formValues.department
+      if (!department) {
+        message.warning('请先选择部门')
+        return
+      }
+      await departmentScoreService.exportTemplate(department)
+    } catch {
+      message.error('导出模板失败')
+    }
+  }
+
+  const handleImport = async (file) => {
+    try {
+      if (!selectedDeptForImport) {
+        message.warning('请先选择部门')
+        return false
+      }
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('department', selectedDeptForImport)
+      await departmentScoreService.batchImport(formData)
+      message.success('导入成功')
+      setImportModalVisible(false)
+      setSelectedDeptForImport('')
+      fetchData()
+    } catch {
+      message.error('导入失败')
+    }
+    return false
+  }
+
   const columns = [
     { title: '年月', dataIndex: 'yearMonth', key: 'yearMonth' },
     { title: '供应商名称', dataIndex: 'supplierName', key: 'supplierName' },
@@ -148,7 +197,7 @@ export default function DepartmentScore() {
       dataIndex: 'status',
       key: 'status',
       render: (text) => {
-        const statusMap = { PENDING: '未开始', IN_PROGRESS: '进行中', COMPLETED: '已完成' }
+        const statusMap = { PENDING: '未提交', IN_PROGRESS: '已保存', COMPLETED: '已提交' }
         return statusMap[text] || text
       },
     },
@@ -165,11 +214,8 @@ export default function DepartmentScore() {
               <Button icon={<DeleteOutlined />} size="small" danger>删除</Button>
             </Popconfirm>
           )}
-          {record.status === 'PENDING' && (
-            <Button icon={<CheckOutlined />} size="small" onClick={() => handleSubmit(record.id)}>提交</Button>
-          )}
           {record.status !== 'COMPLETED' && (
-            <Button size="small" onClick={() => handleComplete(record.id)}>完成</Button>
+            <Button icon={<CheckOutlined />} size="small" onClick={() => handleSubmit(record.id)}>提交</Button>
           )}
         </Space>
       ),
@@ -181,8 +227,10 @@ export default function DepartmentScore() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h2>部门打分明细</h2>
         <Space>
-          <Button icon={<DownloadOutlined />} onClick={handleExport}>导出Excel</Button>
-          <Button icon={<PlusOutlined />} onClick={handleAdd}>新增打分</Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExportTemplate}>导出模板</Button>
+          <Button icon={<UploadOutlined />} onClick={() => setImportModalVisible(true)}>导入打分</Button>
+          <Button icon={<PlusOutlined />} onClick={handleAdd}>新增</Button>
         </Space>
       </div>
       
@@ -233,13 +281,42 @@ export default function DepartmentScore() {
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
-        <DepartmentScoreForm suppliers={suppliers} departmentOptions={departmentOptions} editingId={editingId} data={data} onSubmit={handleFormSubmit} onCancel={() => setModalVisible(false)} />
+        <DepartmentScoreForm suppliers={suppliers} departmentOptions={departmentOptions} editingId={editingId} data={data} onSave={handleSave} onSubmit={handleFormSubmit} onCancel={() => setModalVisible(false)} />
+      </Modal>
+
+      <Modal
+        title="批量导入打分"
+        open={importModalVisible}
+        onCancel={() => { setImportModalVisible(false); setSelectedDeptForImport(''); }}
+        footer={null}
+      >
+        <Form ref={importFormRef} layout="vertical">
+          <Form.Item label="部门" rules={[{ required: true, message: '请选择部门' }]}>
+            <Select value={selectedDeptForImport} onChange={(value) => setSelectedDeptForImport(value)}>
+              {departmentOptions.map((d) => (
+                <Select.Option key={d.key} value={d.key}>{d.value}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label="上传文件">
+            <Upload.Dragger
+              accept=".xlsx,.xls"
+              beforeUpload={handleImport}
+              showUploadList={false}
+            >
+              <Button icon={<UploadOutlined />}>选择文件</Button>
+            </Upload.Dragger>
+          </Form.Item>
+          <Form.Item>
+            <Button onClick={() => { setImportModalVisible(false); setSelectedDeptForImport(''); }}>取消</Button>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   )
 }
 
-function DepartmentScoreForm({ suppliers, departmentOptions, editingId, data, onSubmit, onCancel }) {
+function DepartmentScoreForm({ suppliers, departmentOptions, editingId, data, onSave, onSubmit, onCancel }) {
   const [form] = Form.useForm()
   
   useEffect(() => {
@@ -258,8 +335,26 @@ function DepartmentScoreForm({ suppliers, departmentOptions, editingId, data, on
     }
   }, [editingId, data, form])
 
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields()
+      await onSave(values)
+    } catch (error) {
+      message.error('请填写必填项')
+    }
+  }
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields()
+      await onSubmit(values)
+    } catch (error) {
+      message.error('请填写必填项')
+    }
+  }
+
   return (
-    <Form form={form} onFinish={onSubmit} layout="vertical">
+    <Form form={form} layout="vertical">
       <Form.Item name="yearMonth" label="年月" rules={[{ required: true, message: '请选择年月' }]}>
         <DatePicker picker="month" format="YYYY-MM" style={{ width: '100%' }} locale={zhCN} />
       </Form.Item>
@@ -290,7 +385,8 @@ function DepartmentScoreForm({ suppliers, departmentOptions, editingId, data, on
         <Input.TextArea />
       </Form.Item>
       <Form.Item>
-        <Button type="primary" htmlType="submit">确定</Button>
+        <Button type="primary" onClick={handleSave}>保存</Button>
+        <Button onClick={handleSubmit} style={{ marginLeft: '8px' }}>提交</Button>
         <Button onClick={onCancel} style={{ marginLeft: '8px' }}>取消</Button>
       </Form.Item>
     </Form>

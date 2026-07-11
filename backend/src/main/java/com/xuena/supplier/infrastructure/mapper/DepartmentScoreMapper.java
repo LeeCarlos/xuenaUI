@@ -21,4 +21,6 @@ public interface DepartmentScoreMapper {
     int delete(@Param("id") String id);
 
     int updateStatus(@Param("id") String id, @Param("status") String status);
+
+    int batchInsert(@Param("list") List<DepartmentScoreDO> list);
 }

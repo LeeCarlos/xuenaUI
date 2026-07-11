@@ -15,7 +15,9 @@ public interface FileMapper {
 
     FileDO selectByFileName(String fileName);
 
-    List<FileDO> selectList(@Param("fileType") String fileType, @Param("fileName") String fileName);
+    List<FileDO> selectList(@Param("fileType") String fileType, @Param("fileName") String fileName, @Param("businessType") String businessType);
+
+    List<FileDO> selectTemplatesByBusinessType(@Param("businessType") String businessType);
 
     void insert(FileDO file);
 

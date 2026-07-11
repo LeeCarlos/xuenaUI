@@ -42,6 +42,7 @@ export default function Login() {
           </Form.Item>
         </Form>
         <p style={{ textAlign: 'center', color: '#999', fontSize: '12px' }}>默认账号：admin / admin123</p>
+        <p style={{ textAlign: 'center', color: '#999', fontSize: '12px' }}>user1 / user123</p>
       </Card>
     </div>
   )

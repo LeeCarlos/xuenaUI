@@ -30,7 +30,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public FileDO upload(MultipartFile file, String fileType, String description) throws IOException {
+    public FileDO upload(MultipartFile file, String fileType, String businessType, String description) throws IOException {
         String originalFilename = file.getOriginalFilename();
         String storeKey = idGenerator.generateId();
         String extension = "";
@@ -39,19 +39,20 @@ public class FileServiceImpl implements FileService {
         }
         String storedFileName = storeKey + extension;
 
-        Path uploadDir = Paths.get(uploadPath);
+        Path uploadDir = Paths.get(uploadPath).toAbsolutePath().normalize();
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
         }
 
         Path filePath = uploadDir.resolve(storedFileName);
-        file.transferTo(filePath.toFile());
+        Files.copy(file.getInputStream(), filePath);
 
         FileDO fileDO = new FileDO();
         fileDO.setId(idGenerator.generateId());
         fileDO.setFileName(originalFilename);
         fileDO.setStoreKey(storeKey);
         fileDO.setFileType(fileType);
+        fileDO.setBusinessType(businessType);
         fileDO.setFilePath(filePath.toString());
         fileDO.setFileSize(file.getSize());
         fileDO.setContentType(file.getContentType());
@@ -79,8 +80,13 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<FileDO> list(String fileType, String fileName) {
-        return fileMapper.selectList(fileType, fileName);
+    public List<FileDO> list(String fileType, String fileName, String businessType) {
+        return fileMapper.selectList(fileType, fileName, businessType);
+    }
+
+    @Override
+    public List<FileDO> getTemplatesByBusinessType(String businessType) {
+        return fileMapper.selectTemplatesByBusinessType(businessType);
     }
 
     @Override

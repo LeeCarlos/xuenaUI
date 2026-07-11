@@ -34,4 +34,21 @@ export default {
       window.URL.revokeObjectURL(url)
     })
   },
+  exportTemplate(department) {
+    return request.get('/department-score/export/template', { params: { department }, responseType: 'blob' }).then(res => {
+      const url = window.URL.createObjectURL(new Blob([res]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${department}_打分导入模板.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    })
+  },
+  batchImport(formData) {
+    return request.post('/department-score/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
 }

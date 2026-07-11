@@ -1,10 +1,13 @@
 import request from '../utils/request'
 
 export default {
-  upload(file, fileType, description) {
+  upload(file, fileType, businessType, description) {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('fileType', fileType)
+    if (businessType) {
+      formData.append('businessType', businessType)
+    }
     if (description) {
       formData.append('description', description)
     }

@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface FileService {
 
-    FileDO upload(MultipartFile file, String fileType, String description) throws IOException;
+    FileDO upload(MultipartFile file, String fileType, String businessType, String description) throws IOException;
 
     FileDO getById(String id);
 
@@ -16,7 +16,9 @@ public interface FileService {
 
     FileDO getByFileName(String fileName);
 
-    List<FileDO> list(String fileType, String fileName);
+    List<FileDO> list(String fileType, String fileName, String businessType);
+
+    List<FileDO> getTemplatesByBusinessType(String businessType);
 
     void delete(String id);
 }

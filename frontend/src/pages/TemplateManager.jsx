@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Space, message, Popconfirm, Upload } from 'antd'
+import { Table, Button, Modal, Form, Input, Space, message, Popconfirm, Upload, Select } from 'antd'
 import { UploadOutlined, DownloadOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import fileService from '../services/file'
 import { formatDate } from '../utils/format'
 
+const BUSINESS_TYPES = [
+  { value: 'SUPPLIER_POOL', label: '供应商池' },
+  { value: 'DEPARTMENT_SCORE', label: '部门打分' },
+  { value: 'ASSESSMENT', label: '考核管理' },
+  { value: 'MEETING_NOTE', label: '会议纪要' },
+]
+
 export default function TemplateManager() {
   const [data, setData] = useState([])
   const [form] = Form.useForm()
+  const [uploadModalVisible, setUploadModalVisible] = useState(false)
+  const [uploadForm] = Form.useForm()
 
   const fetchData = async () => {
     try {
       const formValues = form.getFieldsValue()
       const params = {
         fileType: 'TEMPLATE',
-        fileName: formValues.fileName || ''
+        fileName: formValues.fileName || '',
+        businessType: formValues.businessType || ''
       }
       const res = await fileService.list(params)
       setData(res.data || [])
@@ -26,16 +36,25 @@ export default function TemplateManager() {
     fetchData()
   }, [])
 
-  const handleUpload = async (file) => {
+  const handleUpload = async () => {
     try {
-      const formValues = form.getFieldsValue()
-      await fileService.upload(file, 'TEMPLATE', formValues.description)
+      const formValues = uploadForm.getFieldsValue()
+      if (!formValues.file) {
+        message.warning('请选择文件')
+        return
+      }
+      if (!formValues.businessType) {
+        message.warning('请选择业务类型')
+        return
+      }
+      await fileService.upload(formValues.file.originFileObj, 'TEMPLATE', formValues.businessType, formValues.description)
       message.success('上传成功')
+      setUploadModalVisible(false)
+      uploadForm.resetFields()
       fetchData()
     } catch {
       message.error('上传失败')
     }
-    return false
   }
 
   const handleDownload = async (record) => {
@@ -65,6 +84,15 @@ export default function TemplateManager() {
 
   const columns = [
     { title: '模板名称', dataIndex: 'fileName', key: 'fileName' },
+    { 
+      title: '业务类型', 
+      dataIndex: 'businessType', 
+      key: 'businessType', 
+      render: (text) => {
+        const type = BUSINESS_TYPES.find(t => t.value === text)
+        return type ? type.label : text || '-'
+      }
+    },
     { title: '大小', dataIndex: 'fileSize', key: 'fileSize', render: formatFileSize },
     { title: '描述', dataIndex: 'description', key: 'description', render: (text) => text || '-' },
     { title: '存储键', dataIndex: 'storeKey', key: 'storeKey', ellipsis: true },
@@ -93,8 +121,12 @@ export default function TemplateManager() {
         <Form.Item name="fileName" label="模板名称">
           <Input placeholder="请输入模板名称" />
         </Form.Item>
-        <Form.Item name="description" label="描述">
-          <Input placeholder="模板描述" />
+        <Form.Item name="businessType" label="业务类型">
+          <Select placeholder="请选择业务类型" allowClear>
+            {BUSINESS_TYPES.map((type) => (
+              <Select.Option key={type.value} value={type.value}>{type.label}</Select.Option>
+            ))}
+          </Select>
         </Form.Item>
         <Form.Item>
           <Button type="primary" onClick={fetchData}>搜索</Button>
@@ -102,17 +134,48 @@ export default function TemplateManager() {
       </Form>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-        <Upload.Dragger
-          accept=".xlsx,.xls,.doc,.docx,.pdf,.zip,.rar,.txt"
-          beforeUpload={handleUpload}
-          showUploadList={false}
-          style={{ display: 'inline-block', marginBottom: 0 }}
-        >
-          <Button icon={<UploadOutlined />}>上传模板</Button>
-        </Upload.Dragger>
+        <Button icon={<UploadOutlined />} onClick={() => setUploadModalVisible(true)}>上传模板</Button>
       </div>
 
       <Table columns={columns} dataSource={data} rowKey="id" />
+
+      <Modal
+        title="上传模板"
+        open={uploadModalVisible}
+        onCancel={() => { setUploadModalVisible(false); uploadForm.resetFields(); }}
+        footer={null}
+      >
+        <Form form={uploadForm} layout="vertical">
+          <Form.Item name="businessType" label="业务类型" rules={[{ required: true, message: '请选择业务类型' }]}>
+            <Select>
+              {BUSINESS_TYPES.map((type) => (
+                <Select.Option key={type.value} value={type.value}>{type.label}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="file" label="文件" rules={[{ required: true, message: '请选择文件' }]}>
+            <Upload.Dragger
+              accept=".xlsx,.xls"
+              beforeUpload={() => false}
+              onChange={(info) => {
+                if (info.fileList.length > 0) {
+                  uploadForm.setFieldsValue({ file: info.fileList[0] })
+                }
+              }}
+              showUploadList={true}
+            >
+              <Button icon={<UploadOutlined />}>选择文件</Button>
+            </Upload.Dragger>
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input placeholder="模板描述" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" onClick={handleUpload}>上传</Button>
+            <Button onClick={() => { setUploadModalVisible(false); uploadForm.resetFields(); }} style={{ marginLeft: '8px' }}>取消</Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

@@ -249,6 +249,7 @@ CREATE TABLE IF NOT EXISTS sp_file (
     file_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
     store_key VARCHAR(255) NOT NULL COMMENT '存储键（唯一标识）',
     file_type VARCHAR(20) NOT NULL COMMENT '文件类型（NORMAL-普通文件，TEMPLATE-模板文件）',
+    business_type VARCHAR(50) NULL COMMENT '业务类型（SUPPLIER_POOL-供应商池，DEPARTMENT_SCORE-部门打分，ASSESSMENT-考核管理，MEETING_NOTE-会议纪要）',
     file_path VARCHAR(500) NOT NULL COMMENT '存储路径',
     file_size BIGINT NULL COMMENT '文件大小（字节）',
     content_type VARCHAR(100) NULL COMMENT '文件MIME类型',
@@ -262,6 +263,7 @@ CREATE TABLE IF NOT EXISTS sp_file (
     update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX idx_file_type (file_type),
     INDEX idx_store_key (store_key),
+    INDEX idx_business_type (business_type),
     UNIQUE INDEX uk_store_key (store_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件管理表';
 

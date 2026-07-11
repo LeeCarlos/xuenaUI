@@ -2,29 +2,35 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xuena.supplier.infrastructure.mapper.FileMapper">
     <select id="selectById" parameterType="string" resultType="com.xuena.supplier.domain.entity.FileDO">
-        SELECT id, file_name, store_key, file_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE id = #{id} AND is_deleted = 0
+        SELECT id, file_name, store_key, file_type, business_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE id = #{id} AND is_deleted = 0
     </select>
     
     <select id="selectByStoreKey" parameterType="string" resultType="com.xuena.supplier.domain.entity.FileDO">
-        SELECT id, file_name, store_key, file_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE store_key = #{storeKey} AND is_deleted = 0
+        SELECT id, file_name, store_key, file_type, business_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE store_key = #{storeKey} AND is_deleted = 0
     </select>
     
     <select id="selectList" resultType="com.xuena.supplier.domain.entity.FileDO">
-        SELECT id, file_name, store_key, file_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE is_deleted = 0
+        SELECT id, file_name, store_key, file_type, business_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE is_deleted = 0
         <if test="fileType != null and fileType != ''">AND file_type = #{fileType}</if>
         <if test="fileName != null and fileName != ''">AND file_name LIKE CONCAT('%', #{fileName}, '%')</if>
+        <if test="businessType != null and businessType != ''">AND business_type = #{businessType}</if>
         ORDER BY create_date DESC
     </select>
     
+    <select id="selectTemplatesByBusinessType" parameterType="string" resultType="com.xuena.supplier.domain.entity.FileDO">
+        SELECT id, file_name, store_key, file_type, business_type, file_path, file_size, content_type, description, is_deleted, create_name, create_id, create_date, update_name, update_id, update_date FROM sp_file WHERE file_type = 'TEMPLATE' AND business_type = #{businessType} AND is_deleted = 0 ORDER BY create_date DESC
+    </select>
+    
     <insert id="insert" parameterType="com.xuena.supplier.domain.entity.FileDO">
-        INSERT INTO sp_file (id, file_name, store_key, file_type, file_path, file_size, content_type, description, create_name, create_id)
-        VALUES (#{id}, #{fileName}, #{storeKey}, #{fileType}, #{filePath}, #{fileSize}, #{contentType}, #{description}, #{createName}, #{createId})
+        INSERT INTO sp_file (id, file_name, store_key, file_type, business_type, file_path, file_size, content_type, description, create_name, create_id)
+        VALUES (#{id}, #{fileName}, #{storeKey}, #{fileType}, #{businessType}, #{filePath}, #{fileSize}, #{contentType}, #{description}, #{createName}, #{createId})
     </insert>
     
     <update id="update" parameterType="com.xuena.supplier.domain.entity.FileDO">
         UPDATE sp_file
         <set>
             <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
             <if test="description != null">description = #{description},</if>
             <if test="updateName != null">update_name = #{updateName},</if>
             <if test="updateId != null">update_id = #{updateId},</if>

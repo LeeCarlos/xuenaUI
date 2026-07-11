@@ -34,8 +34,9 @@ public class FileController {
     public ResultVO<FileDO> upload(
             @Parameter(description = "文件") @RequestParam("file") MultipartFile file,
             @Parameter(description = "文件类型（NORMAL-普通文件，TEMPLATE-模板文件）") @RequestParam(value = "fileType", defaultValue = "NORMAL") String fileType,
+            @Parameter(description = "业务类型（SUPPLIER_POOL-供应商池，DEPARTMENT_SCORE-部门打分，ASSESSMENT-考核管理，MEETING_NOTE-会议纪要）") @RequestParam(value = "businessType", required = false) String businessType,
             @Parameter(description = "文件描述") @RequestParam(value = "description", required = false) String description) throws IOException {
-        FileDO result = fileService.upload(file, fileType, description);
+        FileDO result = fileService.upload(file, fileType, businessType, description);
         return ResultVO.success(result);
     }
 
@@ -69,8 +70,17 @@ public class FileController {
     @Operation(summary = "查询文件列表", description = "查询文件列表，支持按类型和名称筛选")
     public ResultVO<List<FileDO>> list(
             @Parameter(description = "文件类型") @RequestParam(value = "fileType", required = false) String fileType,
-            @Parameter(description = "文件名") @RequestParam(value = "fileName", required = false) String fileName) {
-        List<FileDO> list = fileService.list(fileType, fileName);
+            @Parameter(description = "文件名") @RequestParam(value = "fileName", required = false) String fileName,
+            @Parameter(description = "业务类型") @RequestParam(value = "businessType", required = false) String businessType) {
+        List<FileDO> list = fileService.list(fileType, fileName, businessType);
+        return ResultVO.success(list);
+    }
+
+    @GetMapping("/template/{businessType}")
+    @Operation(summary = "按业务类型获取模板列表", description = "获取指定业务类型的模板文件列表")
+    public ResultVO<List<FileDO>> getTemplatesByBusinessType(
+            @Parameter(description = "业务类型") @PathVariable String businessType) {
+        List<FileDO> list = fileService.getTemplatesByBusinessType(businessType);
         return ResultVO.success(list);
     }
 

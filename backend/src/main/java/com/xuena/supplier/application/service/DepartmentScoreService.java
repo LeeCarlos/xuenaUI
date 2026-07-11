@@ -1,7 +1,10 @@
 package com.xuena.supplier.application.service;
 
 import com.xuena.supplier.domain.entity.DepartmentScoreDO;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface DepartmentScoreService {
@@ -19,4 +22,8 @@ public interface DepartmentScoreService {
     void submit(String id);
 
     void complete(String id);
+
+    void exportTemplate(String department, HttpServletResponse response) throws IOException;
+
+    void batchImport(MultipartFile file, String department) throws IOException;
 }

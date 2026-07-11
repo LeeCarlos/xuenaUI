@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -107,5 +108,22 @@ public class DepartmentScoreController {
             HttpServletResponse response) throws IOException {
         List<DepartmentScoreDO> list = departmentScoreService.list(yearMonth, supplierName, department);
         EasyExcelUtil.writeExcel(response, "department_score_export.xlsx", DepartmentScoreDO.class, list);
+    }
+
+    @GetMapping("/export/template")
+    @Operation(summary = "导出部门打分模板", description = "按部门导出打分导入模板")
+    public void exportTemplate(
+            @Parameter(description = "部门") @RequestParam String department,
+            HttpServletResponse response) throws IOException {
+        departmentScoreService.exportTemplate(department, response);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "批量导入部门打分", description = "批量导入部门打分数据")
+    public ResultVO<Void> importDepartmentScore(
+            @Parameter(description = "Excel文件") @RequestParam("file") MultipartFile file,
+            @Parameter(description = "部门") @RequestParam String department) throws IOException {
+        departmentScoreService.batchImport(file, department);
+        return ResultVO.success();
     }
 }

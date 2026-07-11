@@ -1,9 +1,11 @@
 package com.xuena.supplier.interfaces.controller;
 
 import com.xuena.supplier.domain.entity.SupplierPoolDO;
+import com.xuena.supplier.domain.entity.FileDO;
 import com.xuena.supplier.interfaces.vo.SupplierTemplateVO;
 import com.xuena.supplier.interfaces.vo.SupplierExportVO;
 import com.xuena.supplier.application.service.SupplierPoolService;
+import com.xuena.supplier.application.service.FileService;
 import com.xuena.supplier.infrastructure.util.EasyExcelUtil;
 import com.xuena.supplier.interfaces.vo.PageVO;
 import com.xuena.supplier.interfaces.vo.ResultVO;
@@ -25,6 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +41,11 @@ import java.util.List;
 public class SupplierController {
 
     private final SupplierPoolService supplierPoolService;
+    private final FileService fileService;
 
-    public SupplierController(SupplierPoolService supplierPoolService) {
+    public SupplierController(SupplierPoolService supplierPoolService, FileService fileService) {
         this.supplierPoolService = supplierPoolService;
+        this.fileService = fileService;
     }
 
     @GetMapping("/pool")
@@ -148,6 +157,19 @@ public class SupplierController {
     @GetMapping("/pool/export/template")
     @Operation(summary = "导出供应商模板", description = "导出供应商导入模板")
     public void exportTemplate(HttpServletResponse response) throws IOException {
+        List<FileDO> templates = fileService.getTemplatesByBusinessType("SUPPLIER_POOL");
+        if (!templates.isEmpty()) {
+            FileDO template = templates.get(0);
+            Path filePath = Paths.get(template.getFilePath());
+            if (Files.exists(filePath)) {
+                response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                response.setCharacterEncoding("utf-8");
+                String encodedFileName = URLEncoder.encode(template.getFileName(), StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+                response.setHeader("Content-disposition", "attachment;filename*=UTF-8''" + encodedFileName);
+                Files.copy(filePath, response.getOutputStream());
+                return;
+            }
+        }
         EasyExcelUtil.writeExcel(response, "供应商导入模板.xlsx", SupplierTemplateVO.class, new ArrayList<>());
     }
 }

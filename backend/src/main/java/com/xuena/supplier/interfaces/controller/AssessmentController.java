@@ -1,7 +1,9 @@
 package com.xuena.supplier.interfaces.controller;
 
 import com.xuena.supplier.domain.entity.MonthlyAssessmentDO;
+import com.xuena.supplier.domain.entity.FileDO;
 import com.xuena.supplier.application.service.MonthlyAssessmentService;
+import com.xuena.supplier.application.service.FileService;
 import com.xuena.supplier.infrastructure.util.EasyExcelUtil;
 import com.xuena.supplier.interfaces.vo.PageVO;
 import com.xuena.supplier.interfaces.vo.ResultVO;
@@ -22,6 +24,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -30,9 +38,11 @@ import java.util.List;
 public class AssessmentController {
 
     private final MonthlyAssessmentService monthlyAssessmentService;
+    private final FileService fileService;
 
-    public AssessmentController(MonthlyAssessmentService monthlyAssessmentService) {
+    public AssessmentController(MonthlyAssessmentService monthlyAssessmentService, FileService fileService) {
         this.monthlyAssessmentService = monthlyAssessmentService;
+        this.fileService = fileService;
     }
 
     @GetMapping
@@ -113,5 +123,24 @@ public class AssessmentController {
         List<MonthlyAssessmentDO> list = monthlyAssessmentService.list(
                 yearMonth, supplierName, category, grade, status);
         EasyExcelUtil.writeExcel(response, "assessment_export.xlsx", MonthlyAssessmentDO.class, list);
+    }
+
+    @GetMapping("/export/template")
+    @Operation(summary = "导出考核模板", description = "导出考核导入模板，优先使用模板管理中配置的模板")
+    public void exportTemplate(HttpServletResponse response) throws IOException {
+        List<FileDO> templates = fileService.getTemplatesByBusinessType("ASSESSMENT");
+        if (!templates.isEmpty()) {
+            FileDO template = templates.get(0);
+            Path filePath = Paths.get(template.getFilePath());
+            if (Files.exists(filePath)) {
+                response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                response.setCharacterEncoding("utf-8");
+                String encodedFileName = URLEncoder.encode(template.getFileName(), StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+                response.setHeader("Content-disposition", "attachment;filename*=UTF-8''" + encodedFileName);
+                Files.copy(filePath, response.getOutputStream());
+                return;
+            }
+        }
+        EasyExcelUtil.writeExcel(response, "考核导入模板.xlsx", MonthlyAssessmentDO.class, new ArrayList<>());
     }
 }

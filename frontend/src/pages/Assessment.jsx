@@ -131,6 +131,14 @@ export default function Assessment() {
     }
   }
 
+  const handleExportTemplate = async () => {
+    try {
+      await assessmentService.exportTemplate()
+    } catch {
+      message.error('导出模板失败')
+    }
+  }
+
   const columns = [
     { title: '年月', dataIndex: 'yearMonth', key: 'yearMonth' },
     { title: '供应商名称', dataIndex: 'supplierName', key: 'supplierName' },
@@ -175,6 +183,7 @@ export default function Assessment() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h2>月度考核管理</h2>
         <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExportTemplate}>导出模板</Button>
           <Button icon={<DownloadOutlined />} onClick={handleExport}>导出Excel</Button>
           <Button icon={<PlusOutlined />} onClick={handleAdd}>新增考核</Button>
         </Space>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.xuena.supplier.infrastructure.mapper.DepartmentScoreMapper">
     <select id="selectById" parameterType="string" resultType="com.xuena.supplier.domain.entity.DepartmentScoreDO">
@@ -45,4 +45,14 @@
     <update id="updateStatus" parameterType="map">
         UPDATE sp_department_score SET status = #{status} WHERE id = #{id}
     </update>
+    
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO sp_department_score (id, `year_month`, supplier_name, department, dimension_group,
+            dimension_score, sub_scores, exception_reason, status, file_name, create_name, create_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.yearMonth}, #{item.supplierName}, #{item.department}, #{item.dimensionGroup},
+            #{item.dimensionScore}, #{item.subScores}, #{item.exceptionReason}, #{item.status}, #{item.fileName}, #{item.createName}, #{item.createId})
+        </foreach>
+    </insert>
 </mapper>
